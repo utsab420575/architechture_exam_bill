@@ -126,8 +126,20 @@ class ReportController extends Controller
             })
             ->with('rateHead')
             ->first(); // or get() if you expect multiple
-        Log::info('📦 RateHead Order 1', optional($rateHead_order_4)->toArray() ?? []);
-        Log::info('📦 RateAmount Order 1', optional($rateAmount_order_4)->toArray() ?? []);
+        Log::info('📦 RateHead Order 4', optional($rateHead_order_4)->toArray() ?? []);
+        Log::info('📦 RateAmount Order 4', optional($rateAmount_order_4)->toArray() ?? []);
+
+        //Order 4.b - Class Assignment
+        $rateHead_order_4_b = RateHead::where('order_no', '4.b')->first();
+        $rateAmount_order_4_b = RateAmount::where('session_id', $session_info->id)
+            ->where('exam_type_id',$exam_type)
+            ->whereHas('rateHead', function ($query) {
+                $query->where('order_no', '4.b');
+            })
+            ->with('rateHead')
+            ->first();
+        Log::info('📦 RateHead Order 4.b', optional($rateHead_order_4_b)->toArray() ?? []);
+        Log::info('📦 RateAmount Order 4.b', optional($rateAmount_order_4_b)->toArray() ?? []);
 
         //Order 5
         $rateHead_order_5 = RateHead::where('order_no', 5)->first();
@@ -434,6 +446,8 @@ class ReportController extends Controller
             'rateAmount_order_3'=>$rateAmount_order_3,
             'rateHead_order_4' => $rateHead_order_4,
             'rateAmount_order_4'=>$rateAmount_order_4,
+            'rateHead_order_4_b' => $rateHead_order_4_b,
+            'rateAmount_order_4_b'=>$rateAmount_order_4_b,
             'rateHead_order_5' => $rateHead_order_5,
             'rateAmount_order_5'=>$rateAmount_order_5,
 

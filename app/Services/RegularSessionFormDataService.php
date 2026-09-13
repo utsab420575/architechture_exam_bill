@@ -25,6 +25,7 @@ class RegularSessionFormDataService
         $examiner_min_rate = null;
 
         $ct_per_class_test_rate = null;
+        $ca_per_class_assignment_rate = null;
 
         $sessional_per_contact_hour_rate = null;
         $sessional_min_exam_rate = null;
@@ -167,6 +168,16 @@ class RegularSessionFormDataService
                     ->where('session_id', $session_info->id)
                     ->first();
                 $ct_per_class_test_rate = $classTestData?->default_rate;
+            }
+
+            // For Class Assignment (Order 4.b)
+            $rateHeadCA = RateHead::where('order_no', '4.b')->first();
+            if ($rateHeadCA) {
+                $classAssignmentData = RateAmount::where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $rateHeadCA->id)
+                    ->where('session_id', $session_info->id)
+                    ->first();
+                $ca_per_class_assignment_rate = $classAssignmentData?->default_rate;
             }
 
             // For Sessional Course Teacher
@@ -525,6 +536,7 @@ class RegularSessionFormDataService
             'examiner_rate_per_script',
             'examiner_min_rate',
             'ct_per_class_test_rate',
+            'ca_per_class_assignment_rate',
             'sessional_per_contact_hour_rate',
             'sessional_min_exam_rate',
             'sessional_total_week_semester_rate',

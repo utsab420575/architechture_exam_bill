@@ -49,6 +49,7 @@
         .body_table_1,
         .body_table_2,
         .body_table_4,
+        .body_table_4_b,
         .body_table_5,
         .body_table_9,
         .body_table_8_a,
@@ -381,6 +382,73 @@
         @php $sl = 1; @endphp
 
         @foreach($assigns_order_4 as $courseCode => $rows)
+            @php
+                $rows         = collect($rows);
+                $rowspan      = $rows->count();
+                $first        = $rows->first();
+                $firstPerson  = $first->teacher ?? $first->employee;
+
+                $course_code  = $first->course_code ?? $courseCode;
+                $course_name  = $first->course_name ?? '';
+                // Nos. of Student = total_students * 2 (2 is fixed)
+                $studentCount = (int)($first->total_students ?? 0);
+            @endphp
+
+            {{-- first line for this course (carries the rowspans) --}}
+            <tr>
+                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $sl }}</td>
+                <td rowspan="{{ $rowspan }}" style="text-align:center;">
+                    {{ $course_code }}
+                </td>
+                <td style="text-align:left;">
+                    {{ optional(optional($firstPerson)->user)->name }},
+                    {{ optional(optional($firstPerson)->designation)->designation }},
+                    {{ optional(optional($firstPerson)->department)->fullname }},
+                    {{ $firstPerson?->university?->short_name ?? 'DUET' }}, {{ $firstPerson?->university?->city ?? 'Gazipur' }}
+                </td>
+                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $studentCount }}×2</td>
+            </tr>
+
+            {{-- remaining teachers for this same course --}}
+            @foreach($rows->skip(1) as $row)
+                @php $person = $row->teacher ?? $row->employee; @endphp
+                <tr>
+                    <td style="text-align:left;">
+                        {{ optional(optional($person)->user)->name }},
+                        {{ optional(optional($person)->designation)->designation }},
+                        {{ optional(optional($person)->department)->fullname }},
+                        {{ $person?->university?->short_name ?? 'DUET' }}, {{ $person?->university?->city ?? 'Gazipur' }}
+                    </td>
+                </tr>
+            @endforeach
+
+            @php $sl++; @endphp
+        @endforeach
+        </tbody>
+    </table>
+@endif
+
+
+{{-- Class Assignment (order 4.b) --}}
+@if(isset($assigns_order_4_b) && $assigns_order_4_b->isNotEmpty())
+    @php $rate_4_b = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '4.b'); @endphp
+    <h3 style="margin-top:15px;margin-bottom: 4px">
+        Internal Class Assignment (@ {{ $rate_4_b ? number_format($rate_4_b->default_rate, 0) : '50' }}/- per class assignment per student)
+    </h3>
+
+    <table class="body_table_4 body_table_4_b" style="margin-top: 0px;" border="1" cellpadding="6">
+        <thead>
+        <tr>
+            <th style="width:10%;">Sl. No.</th>
+            <th style="width:20%;">Course</th>
+            <th style="width:60%;">Name &amp; Address</th>
+            <th style="width:10%;">Nos. of Student</th>
+        </tr>
+        </thead>
+        <tbody>
+        @php $sl = 1; @endphp
+
+        @foreach($assigns_order_4_b as $courseCode => $rows)
             @php
                 $rows         = collect($rows);
                 $rowspan      = $rows->count();

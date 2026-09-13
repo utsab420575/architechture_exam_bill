@@ -52,6 +52,7 @@
         @endif
 
 
+        {{--4 Internal Assessment/Class Test @**/- per class test per student--}}
         @if($session_info->year!=6&& $session_info->semester!=3)
             @include('committee_input.patritals.regular.list_class_test_teacher')
         @endif

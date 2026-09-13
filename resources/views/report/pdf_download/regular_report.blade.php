@@ -354,47 +354,81 @@
 
 
 
-        {{-- Order = 4 --}}
+        {{-- Order = 4 & 4.b --}}
         @php
-            //$assigns_order_4 = $teacher->rateAssigns->where('rateHead.order_no', '4');
             $assigns_order_4 = $teacher->rateAssigns->filter(function($assign) use ($session_info) {
                    return $assign->session_id == $session_info->id &&
                           $assign->exam_type_id == 1 &&
                           $assign->rateHead &&
                           $assign->rateHead->order_no == '4';
-               });
-            $total_assigns = $assigns_order_4->count();
-            $loopIndex = 0;
+               })->values();
 
-            $head = $rateHead_order_4->head ?? 'Class Test';
-            $default_rate = $rateAmount_order_4->default_rate ?? 0;
+            $assigns_order_4_b = $teacher->rateAssigns->filter(function($assign) use ($session_info) {
+                   return $assign->session_id == $session_info->id &&
+                          $assign->exam_type_id == 1 &&
+                          $assign->rateHead &&
+                          $assign->rateHead->order_no == '4.b';
+               })->values();
+
+            $count_4 = max(1, $assigns_order_4->count());
+            $count_4_b = max(1, $assigns_order_4_b->count());
+            $total_rowspan_4 = $count_4 + $count_4_b;
+
+            $default_rate_4 = $rateAmount_order_4->default_rate ?? 60;
+            $default_rate_4_b = $rateAmount_order_4_b->default_rate ?? 50;
         @endphp
 
-        @if ($total_assigns > 0)
+        {{-- Class Test block --}}
+        @if ($assigns_order_4->isNotEmpty())
             @foreach ($assigns_order_4 as $assign)
                 @php
                     $global_sum += $assign->total_amount ?? 0;
                 @endphp
                 <tr>
-                    @if ($loopIndex == 0)
-                        <td rowspan="{{ $total_assigns }}">4</td>
-                        <td class="textstart" colspan="2" rowspan="{{ $total_assigns }}">{{ $head }}</td>
+                    @if ($loop->first)
+                        <td rowspan="{{ $total_rowspan_4 }}">4</td>
+                        <td class="textstart" rowspan="{{ $total_rowspan_4 }}">Internal Assessment</td>
+                        <td class="textstart" rowspan="{{ $count_4 }}">Class Test</td>
                     @endif
                     <td>{{ $assign->course_code ?? '' }}</td>
-                    <td>{{$assign->total_students}}*2</td>
-                    <td class="textend">{{ number_format($default_rate, 2) }}</td>
+                    <td>{{ $assign->total_students }}*2</td>
+                    <td class="textend">{{ number_format($default_rate_4, 2) }}</td>
                     <td class="textend">{{ isset($assign->total_amount) ? number_format($assign->total_amount, 2) : '' }}</td>
                 </tr>
-                @php $loopIndex++; @endphp
             @endforeach
         @else
-            {{-- Fallback row if no data --}}
             <tr>
-                <td rowspan="1">4</td>
-                <td class="textstart" colspan="2" rowspan="1">{{ $head }}</td>
+                <td rowspan="{{ $total_rowspan_4 }}">4</td>
+                <td class="textstart" rowspan="{{ $total_rowspan_4 }}">Internal Assessment</td>
+                <td class="textstart" rowspan="1">Class Test</td>
                 <td></td>
                 <td></td>
-                {{--<td class="textend">{{ number_format($default_rate, 2) }}</td>--}}
+                <td class="textend"></td>
+                <td class="textend"></td>
+            </tr>
+        @endif
+
+        {{-- Class Assignment block --}}
+        @if ($assigns_order_4_b->isNotEmpty())
+            @foreach ($assigns_order_4_b as $assign_b)
+                @php
+                    $global_sum += $assign_b->total_amount ?? 0;
+                @endphp
+                <tr>
+                    @if ($loop->first)
+                        <td class="textstart" rowspan="{{ $count_4_b }}">Class Assignment</td>
+                    @endif
+                    <td>{{ $assign_b->course_code ?? '' }}</td>
+                    <td>{{ $assign_b->total_students }}*2</td>
+                    <td class="textend">{{ number_format($default_rate_4_b, 2) }}</td>
+                    <td class="textend">{{ isset($assign_b->total_amount) ? number_format($assign_b->total_amount, 2) : '' }}</td>
+                </tr>
+            @endforeach
+        @else
+            <tr>
+                <td class="textstart" rowspan="1">Class Assignment</td>
+                <td></td>
+                <td></td>
                 <td class="textend"></td>
                 <td class="textend"></td>
             </tr>
@@ -1723,47 +1757,81 @@
 
 
 
-        {{-- Order = 4 --}}
+        {{-- Order = 4 & 4.b --}}
         @php
-            //$assigns_order_4 = $employee->rateAssigns->where('rateHead.order_no', '4');
             $assigns_order_4 = $employee->rateAssigns->filter(function($assign) use ($session_info) {
                    return $assign->session_id == $session_info->id &&
                           $assign->exam_type_id == 1 &&
                           $assign->rateHead &&
                           $assign->rateHead->order_no == '4';
-               });
-            $total_assigns = $assigns_order_4->count();
-            $loopIndex = 0;
+               })->values();
 
-            $head = $rateHead_order_4->head ?? 'Class Test';
-            $default_rate = $rateAmount_order_4->default_rate ?? 0;
+            $assigns_order_4_b = $employee->rateAssigns->filter(function($assign) use ($session_info) {
+                   return $assign->session_id == $session_info->id &&
+                          $assign->exam_type_id == 1 &&
+                          $assign->rateHead &&
+                          $assign->rateHead->order_no == '4.b';
+               })->values();
+
+            $count_4 = max(1, $assigns_order_4->count());
+            $count_4_b = max(1, $assigns_order_4_b->count());
+            $total_rowspan_4 = $count_4 + $count_4_b;
+
+            $default_rate_4 = $rateAmount_order_4->default_rate ?? 60;
+            $default_rate_4_b = $rateAmount_order_4_b->default_rate ?? 50;
         @endphp
 
-        @if ($total_assigns > 0)
+        {{-- Class Test block --}}
+        @if ($assigns_order_4->isNotEmpty())
             @foreach ($assigns_order_4 as $assign)
                 @php
                     $global_sum += $assign->total_amount ?? 0;
                 @endphp
                 <tr>
-                    @if ($loopIndex == 0)
-                        <td rowspan="{{ $total_assigns }}">4</td>
-                        <td class="textstart" colspan="2" rowspan="{{ $total_assigns }}">{{ $head }}</td>
+                    @if ($loop->first)
+                        <td rowspan="{{ $total_rowspan_4 }}">4</td>
+                        <td class="textstart" rowspan="{{ $total_rowspan_4 }}">Internal Assessment</td>
+                        <td class="textstart" rowspan="{{ $count_4 }}">Class Test</td>
                     @endif
                     <td>{{ $assign->course_code ?? '' }}</td>
-                    <td>{{$assign->total_students}}*2</td>
-                    <td class="textend">{{ number_format($default_rate, 2) }}</td>
+                    <td>{{ $assign->total_students }}*2</td>
+                    <td class="textend">{{ number_format($default_rate_4, 2) }}</td>
                     <td class="textend">{{ isset($assign->total_amount) ? number_format($assign->total_amount, 2) : '' }}</td>
                 </tr>
-                @php $loopIndex++; @endphp
             @endforeach
         @else
-            {{-- Fallback row if no data --}}
             <tr>
-                <td rowspan="1">4</td>
-                <td class="textstart" colspan="2" rowspan="1">{{ $head }}</td>
+                <td rowspan="{{ $total_rowspan_4 }}">4</td>
+                <td class="textstart" rowspan="{{ $total_rowspan_4 }}">Internal Assessment</td>
+                <td class="textstart" rowspan="1">Class Test</td>
                 <td></td>
                 <td></td>
-                {{--<td class="textend">{{ number_format($default_rate, 2) }}</td>--}}
+                <td class="textend"></td>
+                <td class="textend"></td>
+            </tr>
+        @endif
+
+        {{-- Class Assignment block --}}
+        @if ($assigns_order_4_b->isNotEmpty())
+            @foreach ($assigns_order_4_b as $assign_b)
+                @php
+                    $global_sum += $assign_b->total_amount ?? 0;
+                @endphp
+                <tr>
+                    @if ($loop->first)
+                        <td class="textstart" rowspan="{{ $count_4_b }}">Class Assignment</td>
+                    @endif
+                    <td>{{ $assign_b->course_code ?? '' }}</td>
+                    <td>{{ $assign_b->total_students }}*2</td>
+                    <td class="textend">{{ number_format($default_rate_4_b, 2) }}</td>
+                    <td class="textend">{{ isset($assign_b->total_amount) ? number_format($assign_b->total_amount, 2) : '' }}</td>
+                </tr>
+            @endforeach
+        @else
+            <tr>
+                <td class="textstart" rowspan="1">Class Assignment</td>
+                <td></td>
+                <td></td>
                 <td class="textend"></td>
                 <td class="textend"></td>
             </tr>

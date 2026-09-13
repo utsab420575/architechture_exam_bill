@@ -599,6 +599,7 @@ class CommitteeInputController extends Controller
             'class_test_teachers_ids' => 'required|array',
             'no_of_students_ct' => 'required|array',
             'class_test_rate' => 'required|numeric|min:1',
+            'class_assignment_rate' => 'required|numeric|min:1',
             'sid' => 'required|numeric',
         ]);
 
@@ -613,20 +614,23 @@ class CommitteeInputController extends Controller
         $noOfStudents = $request->input('no_of_students_ct', []);
         $sessionId = $request->sid;
         $class_test_rate = $request->class_test_rate;
+        $class_assignment_rate = $request->class_assignment_rate;
         $exam_type_record=ExamType::where('type','regular')->first();
         $exam_type = $exam_type_record->id;
 
         // ✅ Log incoming request
-        Log::info('🔍 Incoming Class Test Teacher Submission', [
+        Log::info('🔍 Incoming Class Test & Assignment Submission', [
             'class_test_teachers_ids' => $classTestTeacherData,
             'no_of_students_ct' => $noOfStudents,
             'class_test_rate' => $class_test_rate,
+            'class_assignment_rate' => $class_assignment_rate,
             'session_id' => $sessionId,
         ]);
 
         try {
             DB::beginTransaction();
 
+            // Order 4: Class Test
             $rateHead = $this->getOrCreateRateHead(4, [
                 'head' => 'Class Test',
                 'dist_type' => 'Share',
@@ -638,9 +642,19 @@ class CommitteeInputController extends Controller
                 'status' => 1,
             ]);
 
-            //$session_info = LocalData::getOrCreateRegularSession($sessionId,$exam_type);
-            //$session_info=Session::where('ugr_id',$sessionId)->where('exam_type_id',$exam_type)->first();
-             $session_info=Session::where('ugr_id',$sessionId)->where('exam_type_id',$exam_type)->where('status',1)->first();
+            // Order 4.b: Class Assignment
+            $rateHead_4_b = $this->getOrCreateRateHead('4.b', [
+                'head' => 'Class Assignment',
+                'dist_type' => 'Share',
+                'enable_min' => 0,
+                'enable_max' => 0,
+                'is_course' => 1,
+                'is_student_count' => 1,
+                'marge_with' => null,
+                'status' => 1,
+            ]);
+
+            $session_info=Session::where('ugr_id',$sessionId)->where('exam_type_id',$exam_type)->where('status',1)->first();
 
             $rateAmount = $this->getOrCreateRateAmount(
                 $rateHead->id,
@@ -653,15 +667,29 @@ class CommitteeInputController extends Controller
                 ]
             );
 
+            $rateAmount_4_b = $this->getOrCreateRateAmount(
+                $rateHead_4_b->id,
+                $session_info->id,
+                $exam_type,
+                [
+                    'default_rate' => $class_assignment_rate,
+                    'min_rate'     => null,
+                    'max_rate'     => null,
+                ]
+            );
 
-            //RateAssign
-            // Delete old entries (rateAssign)
+            // RateAssign
+            // Delete old entries for Order 4 (Class Test)
             RateAssign::where('session_id', $session_info->id)
                 ->where('exam_type_id', $exam_type)
                 ->where('rate_head_id', $rateHead->id)
                 ->delete();
 
-
+            // Delete old entries for Order 4.b (Class Assignment)
+            RateAssign::where('session_id', $session_info->id)
+                ->where('exam_type_id', $exam_type)
+                ->where('rate_head_id', $rateHead_4_b->id)
+                ->delete();
 
             foreach ($classTestTeacherData as $courseId => $teacherIds) {
                 $courseno = $request->input("courseno.$courseId");
@@ -675,7 +703,7 @@ class CommitteeInputController extends Controller
 
                 $studentCount = $teacherCount > 0 ? $input_studentCount * 2 : 0;
 
-                Log::info('📘 Class Test Course-wise Input Data', [
+                Log::info('📘 Class Test & Assignment Course-wise Input Data', [
                     'course_id' => $courseId,
                     'teacher_ids' => $teacherIds,
                     'student_count' => $studentCount,
@@ -686,6 +714,7 @@ class CommitteeInputController extends Controller
 
                 foreach ($teacherIds as $teacherId) {
                     $total_amount = $studentCount * $rateAmount->default_rate;
+                    $total_amount_4_b = $studentCount * $rateAmount_4_b->default_rate;
 
                     Log::info('📄 Saving Class Test RateAssign', [
                         'teacher_id' => $teacherId,
@@ -696,6 +725,7 @@ class CommitteeInputController extends Controller
                         'total_amount' => $total_amount,
                     ]);
 
+                    // Save Order 4 (Class Test)
                     RateAssign::create([
                         'teacher_id' => $teacherId,
                         'rate_head_id' => $rateHead->id,
@@ -709,13 +739,29 @@ class CommitteeInputController extends Controller
                         'total_students' => $input_studentCount,
                         'total_teachers' => $teacher_count,
                     ]);
+
+                    // Save Order 4.b (Class Assignment)
+                    RateAssign::create([
+                        'teacher_id' => $teacherId,
+                        'rate_head_id' => $rateHead_4_b->id,
+                        'session_id' => $session_info->id,
+                        'no_of_items' => $studentCount,
+                        'total_amount' => $total_amount_4_b,
+                        'exam_type_id' => $exam_type,
+
+                        'course_code' => $courseno,
+                        'course_name' => $coursetitle,
+                        'total_students' => $input_studentCount,
+                        'total_teachers' => $teacher_count,
+                    ]);
                 }
             }
 
             DB::commit();
-            Log::info('✅ Class Test Teacher Data Stored Successfully.', [
+            Log::info('✅ Class Test & Assignment Data Stored Successfully.', [
                 'session_id' => $session_info->id,
-                'rate_head_id' => $rateHead->id,
+                'rate_head_id_4' => $rateHead->id,
+                'rate_head_id_4_b' => $rateHead_4_b->id,
             ]);
 
             return response()->json([

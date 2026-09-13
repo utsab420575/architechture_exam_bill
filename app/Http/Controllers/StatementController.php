@@ -121,6 +121,22 @@ class StatementController extends Controller
             ->get()
             ->groupBy('course_code');
 
+        //order 4.b - Class Assignment
+        $rateHead_order_4_b = RateHead::where('order_no', '4.b')->first();
+
+        $assigns_order_4_b = RateAssign::with([
+            'teacher.user','teacher.designation','teacher.department','teacher.university',
+            'employee.user','employee.designation','employee.department','rateHead'
+        ])
+            ->where('session_id',  $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->when($rateHead_order_4_b, fn($q) => $q->where('rate_head_id', $rateHead_order_4_b->id))
+            ->whereNotNull('course_code')
+            ->orderBy('course_code')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('course_code');
+
 
         //order 5
         $rateHead_order_5 = RateHead::where('order_no', '5')->first();
@@ -448,6 +464,7 @@ class StatementController extends Controller
 
             'assigns_order_2'   => $assigns_order_2,
             'assigns_order_4'   => $assigns_order_4,
+            'assigns_order_4_b' => $assigns_order_4_b,
             'assigns_order_5'   => $assigns_order_5,
             'assigns_order_9'   => $assigns_order_9,
             'assigns_order_8_a' => $assigns_order_8_a,
