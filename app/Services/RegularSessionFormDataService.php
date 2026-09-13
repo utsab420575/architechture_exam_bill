@@ -30,6 +30,7 @@ class RegularSessionFormDataService
         $sessional_per_contact_hour_rate = null;
         $sessional_min_exam_rate = null;
         $sessional_total_week_semester_rate = null;
+        $sessional_total_students = null;
 
         $scrutinizer_per_script_rate = null;
         $scrutinizer_min_rate = null;
@@ -196,6 +197,7 @@ class RegularSessionFormDataService
                 $sessional_per_contact_hour_rate = $SessionalCourseTeacherData?->default_rate;
                 $sessional_min_exam_rate = $SessionalCourseTeacherData?->min_rate;
                 $sessional_total_week_semester_rate = $SessionalCourseTeacherData?->total_week;
+                $sessional_total_students = $savedRateAssignSessionalCourseTeacher->flatten()->first()?->total_students;
             }
 
             // For Scrutinizers
@@ -540,6 +542,7 @@ class RegularSessionFormDataService
             'sessional_per_contact_hour_rate',
             'sessional_min_exam_rate',
             'sessional_total_week_semester_rate',
+            'sessional_total_students',
             'scrutinizer_per_script_rate',
             'scrutinizer_min_rate',
             'theory_grade_sheet_per_subject_rate',

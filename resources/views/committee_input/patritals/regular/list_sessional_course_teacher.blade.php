@@ -14,32 +14,18 @@
 
                 <div class="card-body">
                     <div class="row mb-2">
-                        <div class="col-md-4 mb-4">
+                        <div class="col-md-6 mb-4">
                             <div class="form-group">
                                 <label for="sessional_per_hour_rate">Per Contact Hour Rate</label>
                                 <input type="number" name="sessional_per_hour_rate" step="any" value="{{$sessional_per_contact_hour_rate??115}}"
                                        class="form-control" placeholder="Enter per contact hour rate" required>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-4">
+                        <div class="col-md-6 mb-4">
                             <div class="form-group">
-                                <label for="class_test_rate">Minimum Examineer Rate</label>
+                                <label for="sessional_examiner_min_rate">Minimum Examiner Rate</label>
                                 <input type="number" name="sessional_examiner_min_rate" value="{{$sessional_min_exam_rate??1600}}" step="any"
                                        class="form-control" placeholder="Enter minimum examiner rate" required>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="total_week">Total Weeks in semester</label>
-                                <input type="number"
-                                       id="total_week"
-                                       name="total_week"
-                                       step="any"
-                                       class="form-control"
-                                       placeholder="Enter Total Weeks"
-                                       value="{{$sessional_total_week_semester_rate??14}}"
-                                       required>
                             </div>
                         </div>
                     </div>
@@ -51,7 +37,7 @@
                                         $single_course = $courseData->courseObject;
                                         $course_code = $single_course->courseno;
 					                    $savedForSessionalCourseTeacher = $savedRateAssignSessionalCourseTeacher[$course_code] ?? collect(); // Collection of RateAssigns
-                                        //dump($savedForSessionalCourseTeacher);
+                                        $courseStudentsCount = $savedForSessionalCourseTeacher->first()->total_students ?? ($courseData->registered_students_count ?? 30);
                                     @endphp
 
                                         <!-- Hidden course-level metadata -->
@@ -59,16 +45,29 @@
                                            value="{{ $single_course->courseno }}">
                                     <input type="hidden" name="coursetitle[{{ $single_course->id }}]"
                                            value="{{ $single_course->coursetitle }}">
-                                    {{--<input type="hidden" name="registered_students_count[{{ $single_course->id }}]" value="{{ $courseData->registered_students_count }}">--}}
                                     <input type="hidden" name="teacher_count[{{ $single_course->id }}]"
                                            value="{{ max(1, count($single_course->teachers)) }}">
 
-                                    <section class="card card-featured card-featured-secondary">
-                                        <header class="card-header">
-                                            <h2 class="card-title">
+                                    <section class="card card-featured card-featured-secondary mb-4 w-100">
+                                        <header class="card-header d-flex justify-content-between align-items-center">
+                                            <h2 class="card-title mb-0">
                                                 Course: {{ $single_course->courseno }}
                                                 - {{ $single_course->coursetitle }}
                                             </h2>
+                                            <div class="d-flex align-items-center">
+                                                <label for="no_of_students_sessional_{{ $single_course->id }}" class="me-2 mb-0 fw-bold" style="white-space: nowrap;">
+                                                    Total Students:
+                                                </label>
+                                                <input type="number"
+                                                       id="no_of_students_sessional_{{ $single_course->id }}"
+                                                       name="no_of_students_sessional[{{ $single_course->id }}]"
+                                                       class="form-control form-control-sm"
+                                                       style="width: 100px;"
+                                                       min="0"
+                                                       step="any"
+                                                       value="{{ old('no_of_students_sessional.'.$single_course->id, $courseStudentsCount) }}"
+                                                       required>
+                                            </div>
                                         </header>
 
                                         <div class="card-body">

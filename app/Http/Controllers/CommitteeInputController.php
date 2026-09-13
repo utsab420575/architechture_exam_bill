@@ -788,7 +788,7 @@ class CommitteeInputController extends Controller
         $validator = Validator::make($request->all(), [
             'sessional_course_teacher_ids' => 'required|array',
             'no_of_contact_hour' => 'required|array',
-            'total_week' => 'required|numeric|min:1',
+            'no_of_students_sessional' => 'required|array',
             'sid' => 'required',
             'sessional_per_hour_rate' => 'required|numeric|min:1',
             'sessional_examiner_min_rate' => 'required|numeric|min:1',
@@ -804,7 +804,7 @@ class CommitteeInputController extends Controller
         // ✅ Step 2: Extract input
         $sessionalTeacherData = $request->input('sessional_course_teacher_ids', []);
         $noOfContactHour = $request->input('no_of_contact_hour', []);
-        $total_week = $request->total_week;
+        $noOfStudents = $request->input('no_of_students_sessional', []);
         $sessionId = $request->sid;
         $sessional_per_hour_rate = $request->sessional_per_hour_rate;
         $sessional_examiner_min_rate = $request->sessional_examiner_min_rate;
@@ -814,7 +814,7 @@ class CommitteeInputController extends Controller
         Log::info('🔍 Incoming Sessional Course Submission', [
             'teacher_ids' => $sessionalTeacherData,
             'contact_hours' => $noOfContactHour,
-            'total_week' => $total_week,
+            'no_of_students' => $noOfStudents,
             'session_id' => $sessionId,
             'per_hour_rate' => $sessional_per_hour_rate,
             'min_rate' => $sessional_examiner_min_rate,
@@ -847,7 +847,7 @@ class CommitteeInputController extends Controller
                     'default_rate' => $sessional_per_hour_rate,
                     'min_rate'     => $sessional_examiner_min_rate,
                     'max_rate'     => null,
-                    'total_week'   => $total_week
+                    'total_week'   => null
                 ]
             );
 
@@ -859,33 +859,36 @@ class CommitteeInputController extends Controller
                 ->delete();
             // ✅ Step 6: Save RateAssign per teacher
             foreach ($sessionalTeacherData as $courseId => $teacherIds) {
+                $teacherCount = max(1, count($teacherIds));
+                $courseStudentCount = floatval($noOfStudents[$courseId] ?? 0);
+
                 // Case 1: Common hour (multi-select)
                 if ($request->input("teacher_count.$courseId") == 0) {
                     $contactHour = floatval($request->input("no_of_contact_hour.$courseId"));
 
                     foreach ($teacherIds as $teacherId) {
-                        $totalAmount = $contactHour * $rateAmount->default_rate * $total_week;
+                        $totalAmount = ($contactHour * $rateAmount->default_rate * $courseStudentCount) / $teacherCount;
                         if ($totalAmount < $rateAmount->min_rate) $totalAmount = $rateAmount->min_rate;
 
                         Log::info('📘 Sessional Teacher RateAssign From MultiSelect', [
                             'teacher_id' => $teacherId,
                             'course_id' => $courseId,
                             'contact_hour' => $contactHour,
-                            /*'total_week' => $total_week,*/
+                            'total_students' => $courseStudentCount,
+                            'teacher_count' => $teacherCount,
                             'total_amount' => $totalAmount,
                         ]);
                         RateAssign::create([
                             'teacher_id' => $teacherId,
                             'rate_head_id' => $rateHead->id,
                             'session_id' => $session_info->id,
-                           /* 'total_week' => $total_week,*/
                             'no_of_items' => $contactHour,
                             'total_amount' => $totalAmount,
                             'exam_type_id' => $exam_type,
                             'course_code' => $request->input("courseno.$courseId"),
                             'course_name' => $request->input("coursetitle.$courseId"),
-                            'total_students' => $total_week,
-                            'total_teachers' => count($teacherIds),
+                            'total_students' => $courseStudentCount,
+                            'total_teachers' => $teacherCount,
                         ]);
                     }
                 }
@@ -894,7 +897,7 @@ class CommitteeInputController extends Controller
 
                     foreach ($teacherIds as $index => $teacherId) {
                         $contactHour = isset($hours[$index]) ? floatval($hours[$index]) : 0;
-                        $totalAmount = $contactHour * $rateAmount->default_rate * $total_week;
+                        $totalAmount = ($contactHour * $rateAmount->default_rate * $courseStudentCount) / $teacherCount;
 
                         if ($totalAmount < $rateAmount->min_rate) {
                             $totalAmount = $rateAmount->min_rate;
@@ -904,7 +907,8 @@ class CommitteeInputController extends Controller
                             'teacher_id' => $teacherId,
                             'course_id' => $courseId,
                             'contact_hour' => $contactHour,
-                            'total_week' => $total_week,
+                            'total_students' => $courseStudentCount,
+                            'teacher_count' => $teacherCount,
                             'total_amount' => $totalAmount,
                         ]);
 
@@ -918,8 +922,8 @@ class CommitteeInputController extends Controller
 
                             'course_code' => $request->input("courseno.$courseId"),
                             'course_name' => $request->input("coursetitle.$courseId"),
-                            'total_students' => $total_week,
-                            'total_teachers' => $request->input("teacher_count.$courseId"),
+                            'total_students' => $courseStudentCount,
+                            'total_teachers' => $teacherCount,
                         ]);
                     }
                 }

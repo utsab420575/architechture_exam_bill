@@ -57,7 +57,7 @@
             @include('committee_input.patritals.regular.list_class_test_teacher')
         @endif
 
-
+        {{--5 Sessional (@ ***/- per contact hour per week; min ****/- per examiner)--}}
         @if($session_info->year!=6&& $session_info->semester!=3)
             @include('committee_input.patritals.regular.list_sessional_course_teacher')
         @endif
