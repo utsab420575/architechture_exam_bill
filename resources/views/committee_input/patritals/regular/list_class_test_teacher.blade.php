@@ -72,40 +72,57 @@
                                                 Teacher Name
                                             </div>
 
-                                            <!-- Left Side: Paper Setter & Examiner -->
+                                             <!-- Left Side: Paper Setter & Examiner -->
                                             <div class="col-md-8">
-                                                <div class="p-2">
-                                                    @foreach($single_course->teachers as $index=>$assignedTeacher)
-                                                        <div class="row mb-3">
-                                                            <div class="col-md-12">
+                                                <div class="p-2" id="class-test-teachers-container-{{ $single_course->id }}">
+                                                    @php
+                                                        $savedCount = $savedForClassTest->count();
+                                                        $apiTeachers = $single_course->teachers ?? collect();
+                                                        $totalRows = max($savedCount, count($apiTeachers));
+                                                        if ($totalRows == 0) { $totalRows = 1; }
+                                                    @endphp
+
+                                                    @for($index = 0; $index < $totalRows; $index++)
+                                                        @php
+                                                            $assignedTeacher = $apiTeachers[$index] ?? null;
+                                                            $savedTeacherId = $savedForClassTest->values()[$index]->teacher_id ?? null;
+                                                        @endphp
+                                                        <div class="row mb-3 align-items-center ct-teacher-row">
+                                                            <div class="col-md-10">
                                                                 <select name="class_test_teachers_ids[{{ $single_course->id }}][]"
-                                                                        id="class_test_teachers_ids{{ $single_course->id }}_{{ $loop->index }}"
-                                                                         data-plugin-selectTwo
+                                                                        id="class_test_teachers_ids{{ $single_course->id }}_{{ $index }}"
+                                                                        data-plugin-selectTwo
                                                                         class="form-control populate" required>
                                                                     <option value="">-- Select Teacher --</option>
                                                                     @foreach($teachers as $teacherOption)
                                                                         @php
                                                                             if ($savedForClassTest->isNotEmpty()) {
-                                                                                    // Match saved teacher at current index
-                                                                                     // Use teacher from DB at this index
-                                                                                    $savedTeacher = $savedForClassTest->values()[$index]->teacher_id ?? null;
-                                                                                    $isSelected = (int) $teacherOption->id === (int) $savedTeacher;
+                                                                                $isSelected = (int) $teacherOption->id === (int) $savedTeacherId;
                                                                             } else {
-                                                                                // Fallback: match by email if no DB saved data
-                                                                                 // Match by email between API teacher and  local DB teacher
                                                                                 $isSelected = isset($assignedTeacher->user->email, $teacherOption->user->email) &&
                                                                                               $assignedTeacher->user->email === $teacherOption->user->email;
                                                                             }
                                                                         @endphp
                                                                         <option value="{{ $teacherOption->id }}"
                                                                             {{ $isSelected ? 'selected' : '' }}>
-                                                                            {{ $teacherOption->user->name }} - {{ $teacherOption->designation->designation }}- {{ $teacherOption->department->shortname }}
+                                                                            {{ $teacherOption->user->name }} - {{ $teacherOption->designation->designation }} - {{ $teacherOption->department->shortname }}
                                                                         </option>
                                                                     @endforeach
                                                                 </select>
                                                             </div>
+                                                            <div class="col-md-2 text-end">
+                                                                <button type="button" class="btn btn-sm btn-danger btn-remove-ct-row" title="Remove Teacher">🗑️</button>
+                                                            </div>
                                                         </div>
-                                                    @endforeach
+                                                    @endfor
+                                                </div>
+
+                                                <!-- Course-wise Add Teacher Button -->
+                                                <div class="mt-2 ms-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-success btn-add-class-test-teacher"
+                                                            data-course-id="{{ $single_course->id }}">
+                                                        + Add Teacher
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -124,7 +141,6 @@
                                                            class="form-control"
                                                            min="0"
                                                            step="any"
-                                                           {{--value="{{ old('no_of_script.'.$single_course->id, $courseData->registered_students_count) }}"--}}
                                                            value="{{ old('no_of_script.'.$single_course->id, $noOfScript) }}"
                                                            required>
                                                 </div>
@@ -154,6 +170,65 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('form-list-of-class-test-teacher');
+            const allTeachers = @json($teachers);
+
+            // Dynamic course-wise Add Teacher button for Class Test
+            document.addEventListener('click', function (e) {
+                const addBtn = e.target.closest('.btn-add-class-test-teacher');
+                if (addBtn) {
+                    const courseId = addBtn.getAttribute('data-course-id');
+                    const container = document.getElementById(`class-test-teachers-container-${courseId}`);
+                    if (!container) return;
+
+                    const rowDiv = document.createElement('div');
+                    rowDiv.classList.add('row', 'mb-3', 'align-items-center', 'ct-teacher-row');
+
+                    let teacherOptionsHtml = '<option value="">-- Select Teacher --</option>';
+                    allTeachers.forEach(t => {
+                        const name = t.user ? t.user.name : (t.teachername || '');
+                        const desig = t.designation ? t.designation.designation : '';
+                        const dept = t.department ? t.department.shortname : '';
+                        teacherOptionsHtml += `<option value="${t.id}">${name} - ${desig} - ${dept}</option>`;
+                    });
+
+                    rowDiv.innerHTML = `
+                        <div class="col-md-10">
+                            <select name="class_test_teachers_ids[${courseId}][]" class="form-control populate dynamic-select2-ct" required>
+                                ${teacherOptionsHtml}
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button" class="btn btn-sm btn-danger btn-remove-ct-row" title="Remove Teacher">🗑️</button>
+                        </div>
+                    `;
+
+                    container.appendChild(rowDiv);
+
+                    // Initialize Select2 on the new dropdown
+                    $(rowDiv).find('.dynamic-select2-ct').select2({
+                        theme: 'bootstrap',
+                        width: '100%',
+                        allowClear: true,
+                        placeholder: '-- Select Teacher --'
+                    });
+                }
+
+                // Dynamic Remove Row button
+                const removeBtn = e.target.closest('.btn-remove-ct-row');
+                if (removeBtn) {
+                    const row = removeBtn.closest('.ct-teacher-row');
+                    const container = row.parentElement;
+                    if (container && container.querySelectorAll('.ct-teacher-row').length > 1) {
+                        row.remove();
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Notice',
+                            text: 'At least one teacher row must remain for each course.'
+                        });
+                    }
+                }
+            });
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();

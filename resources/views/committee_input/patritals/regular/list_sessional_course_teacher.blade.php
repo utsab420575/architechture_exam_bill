@@ -61,7 +61,7 @@
                                            value="{{ $single_course->coursetitle }}">
                                     {{--<input type="hidden" name="registered_students_count[{{ $single_course->id }}]" value="{{ $courseData->registered_students_count }}">--}}
                                     <input type="hidden" name="teacher_count[{{ $single_course->id }}]"
-                                           value="{{ count($single_course->teachers) }}">
+                                           value="{{ max(1, count($single_course->teachers)) }}">
 
                                     <section class="card card-featured card-featured-secondary">
                                         <header class="card-header">
@@ -76,54 +76,28 @@
                                                 class="table-list-of-sessional-course-teacher table table-responsive-md table-striped mb-0">
                                                 <thead>
                                                 <tr>
-                                                    <th style="width: 80%;">Name</th>
-                                                    <th style="width: 20%;">Contact Hour/Week</th>
+                                                    <th style="width: 55%;">Name</th>
+                                                    <th style="width: 30%;">Contact Hour/Week</th>
+                                                    <th style="width: 15%; text-align: center;">Action</th>
                                                 </tr>
                                                 </thead>
-                                                <tbody>
+                                                <tbody id="sessional-teachers-tbody-{{ $single_course->id }}">
+                                                    @php
+                                                        $savedCount = $savedForSessionalCourseTeacher->count();
+                                                        $apiTeachers = $single_course->teachers ?? collect();
+                                                        $totalRows = max($savedCount, count($apiTeachers));
+                                                        if ($totalRows == 0) { $totalRows = 1; }
+                                                        $defaultContactHours = $single_course->credithour ? $single_course->credithour * 2 : '';
+                                                    @endphp
 
-                                                @if($courseData->teacher_count == 0)
-
-                                                    <tr>
-                                                        <td>
-                                                            <label>Select Teachers:</label>
-                                                            <select
-                                                                name="sessional_course_teacher_ids[{{ $single_course->id }}][]"
-                                                                multiple data-plugin-selectTwo
-                                                                id="sessional_course_teacher_{{ $single_course->id }}_{{ $loop->index }}"
-                                                                class="form-control populate" required>
-                                                                <option value="" disabled>-- Select Teacher --</option>
-                                                                @foreach($groupedTeachers as $deptFullName => $deptTeachers)
-                                                                    <optgroup label="{{ $deptFullName }}">
-                                                                        @foreach($deptTeachers as $teacher)
-                                                                            <option
-                                                                                value="{{ $teacher->id }}" {{ $savedForSessionalCourseTeacher->pluck('teacher_id')->contains($teacher->id) ? 'selected' : '' }}>
-                                                                                {{ $teacher->user->name }}
-                                                                                - {{ $teacher->department->shortname }}
-                                                                            </option>
-                                                                        @endforeach
-                                                                    </optgroup>
-                                                                @endforeach
-                                                            </select>
-                                                        </td>
-                                                        <td>
-                                                            <label></label>
-                                                            @php
-                                                                // Check if there is saved data, and if yes, get total_students from the first teacher's entry
-                                                                $noOfItems = $savedForSessionalCourseTeacher->isNotEmpty()
-                                                                            ? $savedForSessionalCourseTeacher->first()->no_of_items
-                                                                            : ($single_course->credithour ? $single_course->credithour * 2 : '');
-                                                            @endphp
-                                                            <input name="no_of_contact_hour[{{ $single_course->id }}]"
-                                                                   type="number" min="0" step="any" class="form-control"
-                                                                  {{-- value="{{ $single_course->credithour ? $single_course->credithour * 2 : '' }}"--}}
-                                                                      value="{{old('no_of_contact_hour.'.$single_course->id, $noOfItems)}}"
-                                                                   >
-                                                        </td>
-                                                    </tr>
-                                                @else
-                                                    @foreach($single_course->teachers as  $index=>$assignedTeacher)
-                                                        <tr>
+                                                    @for($index = 0; $index < $totalRows; $index++)
+                                                        @php
+                                                            $assignedTeacher = $apiTeachers[$index] ?? null;
+                                                            $savedRecord = $savedForSessionalCourseTeacher->values()[$index] ?? null;
+                                                            $savedTeacherId = $savedRecord ? $savedRecord->teacher_id : null;
+                                                            $contactHourVal = $savedRecord ? $savedRecord->no_of_items : $defaultContactHours;
+                                                        @endphp
+                                                        <tr class="sessional-teacher-row">
                                                             <td>
                                                                 <select
                                                                     name="sessional_course_teacher_ids[{{ $single_course->id }}][]"
@@ -132,17 +106,12 @@
                                                                     <option value="">-- Select Teacher --</option>
                                                                     @foreach($teachers as $teacherOption)
                                                                         @php
-                                                                           if ($savedForSessionalCourseTeacher->isNotEmpty()) {
-                                                                                       // Match saved teacher at current index
-                                                                                        // Use teacher from DB at this index
-                                                                                       $savedTeacher = $savedForSessionalCourseTeacher->values()[$index]->teacher_id ?? null;
-                                                                                       $isSelected = (int) $teacherOption->id === (int) $savedTeacher;
-                                                                           } else {
-                                                                               // Fallback: match by email if no DB saved data
-                                                                               // Match by email between API teacher and  local DB teacher
-                                                                               $isSelected = isset($assignedTeacher->user->email, $teacherOption->user->email) &&
-                                                                                             $assignedTeacher->user->email === $teacherOption->user->email;
-                                                                           }
+                                                                            if ($savedForSessionalCourseTeacher->isNotEmpty()) {
+                                                                                $isSelected = (int) $teacherOption->id === (int) $savedTeacherId;
+                                                                            } else {
+                                                                                $isSelected = isset($assignedTeacher->user->email, $teacherOption->user->email) &&
+                                                                                              $assignedTeacher->user->email === $teacherOption->user->email;
+                                                                            }
                                                                         @endphp
 
                                                                         <option value="{{ $teacherOption->id }}"
@@ -155,26 +124,29 @@
                                                                 </select>
                                                             </td>
                                                             <td>
-                                                                @php
-                                                                    // Get saved data for the teacher using the index
-                                                                     $savedTeacher = $savedForSessionalCourseTeacher->values()[$index] ?? null;
-
-                                                                     // If saved data is found, use no_of_items, otherwise fallback to course's credit hours * 2
-                                                                     $noOfItems = $savedTeacher ? $savedTeacher->no_of_items : ($single_course->credithour ? $single_course->credithour * 2 : '');
-                                                                @endphp
                                                                 <input
                                                                     name="no_of_contact_hour[{{ $single_course->id }}][]"
                                                                     type="number" min="0" step="any"
                                                                     class="form-control"
-                                                                   {{-- value="{{ $savedNoOfItems??$single_course->credithour ? $single_course->credithour * 2:''}}"--}}
-                                                                    value="{{ old('no_of_contact_hour.'.$single_course->id, $noOfItems) }}"
-                                                                    >
+                                                                    value="{{ old('no_of_contact_hour.'.$single_course->id.'.'.$index, $contactHourVal) }}"
+                                                                    required>
+                                                            </td>
+                                                            <td class="text-center align-middle">
+                                                                <button type="button" class="btn btn-sm btn-danger btn-remove-sessional-row" title="Remove Teacher">🗑️</button>
                                                             </td>
                                                         </tr>
-                                                    @endforeach
-                                                @endif
+                                                    @endfor
                                                 </tbody>
                                             </table>
+
+                                            <!-- Course-wise Add Teacher Button -->
+                                            <div class="mt-2 text-start">
+                                                <button type="button" class="btn btn-sm btn-outline-success btn-add-sessional-teacher"
+                                                        data-course-id="{{ $single_course->id }}"
+                                                        data-default-hours="{{ $defaultContactHours }}">
+                                                    + Add Teacher
+                                                </button>
+                                            </div>
                                         </div>
                                     </section>
                                 @endforeach
@@ -199,6 +171,69 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('form-list-of-sessional-course-teacher');
+            const allTeachers = @json($teachers);
+
+            // Dynamic course-wise Add Teacher button for Sessional
+            document.addEventListener('click', function (e) {
+                const addBtn = e.target.closest('.btn-add-sessional-teacher');
+                if (addBtn) {
+                    const courseId = addBtn.getAttribute('data-course-id');
+                    const defaultHours = addBtn.getAttribute('data-default-hours') || '';
+                    const tbody = document.getElementById(`sessional-teachers-tbody-${courseId}`);
+                    if (!tbody) return;
+
+                    const tr = document.createElement('tr');
+                    tr.classList.add('sessional-teacher-row');
+
+                    let teacherOptionsHtml = '<option value="">-- Select Teacher --</option>';
+                    allTeachers.forEach(t => {
+                        const name = t.user ? t.user.name : (t.teachername || '');
+                        const desig = t.designation ? t.designation.designation : '';
+                        const dept = t.department ? t.department.shortname : '';
+                        teacherOptionsHtml += `<option value="${t.id}">${name} - ${desig} - ${dept}</option>`;
+                    });
+
+                    tr.innerHTML = `
+                        <td>
+                            <select name="sessional_course_teacher_ids[${courseId}][]" class="form-control populate dynamic-select2-sessional" required>
+                                ${teacherOptionsHtml}
+                            </select>
+                        </td>
+                        <td>
+                            <input name="no_of_contact_hour[${courseId}][]" type="number" min="0" step="any" class="form-control" value="${defaultHours}" required>
+                        </td>
+                        <td class="text-center align-middle">
+                            <button type="button" class="btn btn-sm btn-danger btn-remove-sessional-row" title="Remove Teacher">🗑️</button>
+                        </td>
+                    `;
+
+                    tbody.appendChild(tr);
+
+                    // Initialize Select2 on the new dropdown
+                    $(tr).find('.dynamic-select2-sessional').select2({
+                        theme: 'bootstrap',
+                        width: '100%',
+                        allowClear: true,
+                        placeholder: '-- Select Teacher --'
+                    });
+                }
+
+                // Dynamic Remove Row button
+                const removeBtn = e.target.closest('.btn-remove-sessional-row');
+                if (removeBtn) {
+                    const tr = removeBtn.closest('.sessional-teacher-row');
+                    const tbody = tr.parentElement;
+                    if (tbody && tbody.querySelectorAll('.sessional-teacher-row').length > 1) {
+                        tr.remove();
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Notice',
+                            text: 'At least one teacher row must remain for each sessional course.'
+                        });
+                    }
+                }
+            });
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();

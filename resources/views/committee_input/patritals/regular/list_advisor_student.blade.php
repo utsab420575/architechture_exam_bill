@@ -99,6 +99,10 @@
                         $chunks = array_chunk($filteredAdvisors, $chunkSize, true);
                     @endphp
 
+                    @php
+                        $listedAdvisorTeacherIds = [];
+                    @endphp
+
                     <div class="row">
                         @foreach($chunks as $chunk)
                             <div class="col-md-6">
@@ -115,6 +119,7 @@
 
                                         // Use the local teacher's ID if matched, otherwise fall back to API ID
                                         $localTeacherId = $matchedTeacher ? $matchedTeacher->id : $apiTeacherId;
+                                        $listedAdvisorTeacherIds[] = (int) $localTeacherId;
 
                                         // Use the matched local teacher's name, or fallback to API teacher's name or 'Unknown'
                                         $displayName = $matchedTeacher->user->name ?? $singleAdvisor->user->name ?? 'Unknown';
@@ -148,6 +153,44 @@
                         @endforeach
                     </div>
 
+                    <!-- Container for Dynamically Added / Pre-saved Extra Advisors -->
+                    <div id="additional-advisors-container" class="mt-2">
+                        @php
+                            $extraSavedAdvisors = $savedAdvisorStudentData->filter(function ($item) use ($listedAdvisorTeacherIds) {
+                                return !in_array((int)$item->teacher_id, $listedAdvisorTeacherIds);
+                            });
+                        @endphp
+                        @foreach($extraSavedAdvisors as $extraAdvisor)
+                            <div class="form-group row pb-3 align-items-center advisor-dynamic-row">
+                                <div class="col-md-6">
+                                    <select name="advisorTeacherIds[]" class="form-control populate dynamic-select2-advisor" required>
+                                        <option value="">-- Select Teacher --</option>
+                                        @foreach($teachers as $teacherOption)
+                                            <option value="{{ $teacherOption->id }}" {{ (int)$teacherOption->id === (int)$extraAdvisor->teacher_id ? 'selected' : '' }}>
+                                                {{ $teacherOption->user->name ?? $teacherOption->teachername ?? '' }}
+                                                - {{ $teacherOption->designation->designation ?? '' }}
+                                                - {{ $teacherOption->department->shortname ?? '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" name="advisorTotal_students[]" min="0" step="any"
+                                           value="{{ $extraAdvisor->total_students }}" class="form-control" required>
+                                </div>
+                                <div class="col-md-2 text-end">
+                                    <button type="button" class="btn btn-sm btn-danger btn-remove-advisor-row" title="Remove Advisor">🗑️</button>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <!-- Add Advisor Button -->
+                    <div class="mt-2 text-start">
+                        <button type="button" id="btn-add-advisor" class="btn btn-sm btn-outline-success">
+                            + Add Advisor
+                        </button>
+                    </div>
 
                     <div class="text-end mt-3">
                         <button id="submit-list-of-advisor-student" type="submit" class="btn btn-primary">
@@ -170,30 +213,72 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('form-list-of-advisor-student');
+            const allTeachers = @json($teachers);
+
+            // Initialize Select2 on any pre-rendered extra advisor rows
+            $('.dynamic-select2-advisor').select2({
+                theme: 'bootstrap',
+                width: '100%',
+                allowClear: true,
+                placeholder: '-- Select Teacher --'
+            });
+
+            // Dynamic Add Advisor button
+            const addAdvisorBtn = document.getElementById('btn-add-advisor');
+            if (addAdvisorBtn) {
+                addAdvisorBtn.addEventListener('click', function () {
+                    const container = document.getElementById('additional-advisors-container');
+                    if (!container) return;
+
+                    const rowDiv = document.createElement('div');
+                    rowDiv.classList.add('form-group', 'row', 'pb-3', 'align-items-center', 'advisor-dynamic-row');
+
+                    let teacherOptionsHtml = '<option value="">-- Select Teacher --</option>';
+                    allTeachers.forEach(t => {
+                        const name = t.user ? t.user.name : (t.teachername || '');
+                        const desig = t.designation ? t.designation.designation : '';
+                        const dept = t.department ? t.department.shortname : '';
+                        teacherOptionsHtml += `<option value="${t.id}">${name} - ${desig} - ${dept}</option>`;
+                    });
+
+                    rowDiv.innerHTML = `
+                        <div class="col-md-6">
+                            <select name="advisorTeacherIds[]" class="form-control populate dynamic-select2-advisor" required>
+                                ${teacherOptionsHtml}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="number" name="advisorTotal_students[]" min="0" step="any" placeholder="No of Students" class="form-control" required>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button type="button" class="btn btn-sm btn-danger btn-remove-advisor-row" title="Remove Advisor">🗑️</button>
+                        </div>
+                    `;
+
+                    container.appendChild(rowDiv);
+
+                    $(rowDiv).find('.dynamic-select2-advisor').select2({
+                        theme: 'bootstrap',
+                        width: '100%',
+                        allowClear: true,
+                        placeholder: '-- Select Teacher --'
+                    });
+                });
+            }
+
+            // Remove Advisor Row
+            document.addEventListener('click', function (e) {
+                const removeBtn = e.target.closest('.btn-remove-advisor-row');
+                if (removeBtn) {
+                    const row = removeBtn.closest('.advisor-dynamic-row');
+                    if (row) {
+                        row.remove();
+                    }
+                }
+            });
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
-                // ✅ Validate teacher selections
-              /*  const teacherSelects = form.querySelectorAll('select[name^="teachers"]');
-                let allSelected = true;
-
-                teacherSelects.forEach(select => {
-                    if (select.selectedOptions.length === 0) {
-                        allSelected = false;
-                        select.classList.add('is-invalid'); // red border if invalid
-                    } else {
-                        select.classList.remove('is-invalid');
-                    }
-                });
-
-                if (!allSelected) {
-                    Swal.fire({
-                        title: 'Missing Teacher',
-                        text: 'Please select at least one teacher for each course.',
-                        icon: 'warning'
-                    });
-                    return; // ❌ stop form submission
-                }*/
                 Swal.fire({
                     title: 'Are you sure?',
                     text: "Do you want to save the committee data?",

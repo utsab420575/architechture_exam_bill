@@ -90,31 +90,39 @@
 
                                     <div class="card-body card-list-of-examiner-paper-setter">
                                         <div class="row">
-                                            <!-- Left Side: Paper Setter & Examiner -->
+                                             <!-- Left Side: Paper Setter & Examiner -->
                                             <div class="col-md-8">
-                                                <div class="p-2">
-                                                    @foreach($single_course->teachers as $index=>$assignedTeacher)
-                                                        <div class="row mb-3">
+                                                <div class="p-2" id="course-teachers-container-{{ $single_course->id }}">
+                                                    @php
+                                                        $savedCount = max($savedForPaperSetter->count(), $savedForExaminer->count());
+                                                        $apiTeachers = $single_course->teachers ?? collect();
+                                                        $totalRows = max($savedCount, count($apiTeachers));
+                                                        if ($totalRows == 0) { $totalRows = 1; }
+                                                    @endphp
+
+                                                    @for($index = 0; $index < $totalRows; $index++)
+                                                        @php
+                                                            $assignedTeacher = $apiTeachers[$index] ?? null;
+                                                            $savedPsTeacherId = $savedForPaperSetter->values()[$index]->teacher_id ?? null;
+                                                            $savedExTeacherId = $savedForExaminer->values()[$index]->teacher_id ?? null;
+                                                        @endphp
+                                                        <div class="row mb-3 align-items-center teacher-row">
                                                             <!-- Paper Setter -->
-                                                            <div class="col-md-6">
+                                                            <div class="col-md-5">
                                                                 <label
-                                                                    for="paper_setter_{{ $single_course->id }}_{{ $loop->index }}">Paper
+                                                                    for="paper_setter_{{ $single_course->id }}_{{ $index }}">Paper
                                                                     Setter</label>
                                                                 <select
                                                                     name="paper_setter_ids[{{ $single_course->id }}][]"
                                                                     data-plugin-selectTwo
-                                                                    id="paper_setter_{{ $single_course->id }}_{{ $loop->index }}"
-                                                                    class="form-control  populate" required>
+                                                                    id="paper_setter_{{ $single_course->id }}_{{ $index }}"
+                                                                    class="form-control populate" required>
                                                                     <option value="">-- Select Teacher --</option>
                                                                     @foreach($teachers as $teacherOption)
                                                                         @php
                                                                             if ($savedForPaperSetter->isNotEmpty()) {
-                                                                                    // Match saved teacher at current index
-                                                                                     // Use teacher from DB at this index
-                                                                                    $savedTeacher = $savedForPaperSetter->values()[$index]->teacher_id ?? null;
-                                                                                    $isSelected = (int) $teacherOption->id === (int) $savedTeacher;
+                                                                                $isSelected = (int) $teacherOption->id === (int) $savedPsTeacherId;
                                                                             } else {
-                                                                                // Fallback: match by email if no DB saved data
                                                                                 $isSelected = isset($assignedTeacher->user->email, $teacherOption->user->email) &&
                                                                                               $assignedTeacher->user->email === $teacherOption->user->email;
                                                                             }
@@ -123,31 +131,26 @@
                                                                             {{ $isSelected ? 'selected' : '' }}>
                                                                             {{ $teacherOption->user->name }}
                                                                             - {{ $teacherOption->designation->designation }}
-                                                                            -{{$teacherOption->department->shortname}}
+                                                                            - {{ $teacherOption->department->shortname }}
                                                                         </option>
                                                                     @endforeach
                                                                 </select>
                                                             </div>
 
                                                             <!-- Examiner -->
-                                                            <div class="col-md-6">
-                                                                {{--<label for="examiner_{{ $assignedTeacher->id }}">Examiner</label>--}}
+                                                            <div class="col-md-5">
                                                                 <label
-                                                                    for="examiner_{{ $single_course->id }}">Examiner</label>
+                                                                    for="examiner_{{ $single_course->id }}_{{ $index }}">Examiner</label>
                                                                 <select name="examiner_ids[{{ $single_course->id }}][]"
                                                                         data-plugin-selectTwo
-                                                                        id="examiner_{{ $assignedTeacher->id }}"
+                                                                        id="examiner_{{ $single_course->id }}_{{ $index }}"
                                                                         class="form-control populate" required>
                                                                     <option value="">-- Select Teacher --</option>
                                                                     @foreach($teachers as $teacherOption)
                                                                         @php
                                                                             if ($savedForExaminer->isNotEmpty()) {
-                                                                                    // Match saved teacher at current index
-                                                                                     // Use teacher from DB at this index
-                                                                                    $savedTeacher = $savedForExaminer->values()[$index]->teacher_id ?? null;
-                                                                                    $isSelected = (int) $teacherOption->id === (int) $savedTeacher;
+                                                                                $isSelected = (int) $teacherOption->id === (int) $savedExTeacherId;
                                                                             } else {
-                                                                                // Fallback: match by email if no DB saved data
                                                                                 $isSelected = isset($assignedTeacher->user->email, $teacherOption->user->email) &&
                                                                                               $assignedTeacher->user->email === $teacherOption->user->email;
                                                                             }
@@ -156,13 +159,26 @@
                                                                             {{ $isSelected ? 'selected' : '' }}>
                                                                             {{ $teacherOption->user->name }}
                                                                             - {{ $teacherOption->designation->designation }}
-                                                                            -{{$teacherOption->department->shortname}}
+                                                                            - {{ $teacherOption->department->shortname }}
                                                                         </option>
                                                                     @endforeach
                                                                 </select>
                                                             </div>
+
+                                                            <!-- Remove Button -->
+                                                            <div class="col-md-2 text-end pt-3">
+                                                                <button type="button" class="btn btn-sm btn-danger btn-remove-teacher-row" title="Remove Teacher">🗑️</button>
+                                                            </div>
                                                         </div>
-                                                    @endforeach
+                                                    @endfor
+                                                </div>
+
+                                                <!-- Course-wise Add Teacher Button -->
+                                                <div class="mt-2 ms-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-success btn-add-teacher-course"
+                                                            data-course-id="{{ $single_course->id }}">
+                                                        + Add Teacher
+                                                    </button>
                                                 </div>
                                             </div>
 
@@ -211,6 +227,72 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('form-list-of-examiner-paper-setter');
+            const allTeachers = @json($teachers);
+
+            // Dynamic course-wise Add Teacher button
+            document.addEventListener('click', function (e) {
+                const addBtn = e.target.closest('.btn-add-teacher-course');
+                if (addBtn) {
+                    const courseId = addBtn.getAttribute('data-course-id');
+                    const container = document.getElementById(`course-teachers-container-${courseId}`);
+                    if (!container) return;
+
+                    const rowDiv = document.createElement('div');
+                    rowDiv.classList.add('row', 'mb-3', 'align-items-center', 'teacher-row');
+
+                    let teacherOptionsHtml = '<option value="">-- Select Teacher --</option>';
+                    allTeachers.forEach(t => {
+                        const name = t.user ? t.user.name : (t.teachername || '');
+                        const desig = t.designation ? t.designation.designation : '';
+                        const dept = t.department ? t.department.shortname : '';
+                        teacherOptionsHtml += `<option value="${t.id}">${name} - ${desig} - ${dept}</option>`;
+                    });
+
+                    rowDiv.innerHTML = `
+                        <div class="col-md-5">
+                            <label>Paper Setter</label>
+                            <select name="paper_setter_ids[${courseId}][]" class="form-control populate dynamic-select2" required>
+                                ${teacherOptionsHtml}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label>Examiner</label>
+                            <select name="examiner_ids[${courseId}][]" class="form-control populate dynamic-select2" required>
+                                ${teacherOptionsHtml}
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-end pt-3">
+                            <button type="button" class="btn btn-sm btn-danger btn-remove-teacher-row" title="Remove Teacher">🗑️</button>
+                        </div>
+                    `;
+
+                    container.appendChild(rowDiv);
+
+                    // Initialize Select2 on both newly created selects
+                    $(rowDiv).find('.dynamic-select2').select2({
+                        theme: 'bootstrap',
+                        width: '100%',
+                        allowClear: true,
+                        placeholder: '-- Select Teacher --'
+                    });
+                }
+
+                // Dynamic Remove Row button
+                const removeBtn = e.target.closest('.btn-remove-teacher-row');
+                if (removeBtn) {
+                    const row = removeBtn.closest('.teacher-row');
+                    const container = row.parentElement;
+                    if (container && container.querySelectorAll('.teacher-row').length > 1) {
+                        row.remove();
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Notice',
+                            text: 'At least one teacher row must remain for each course.'
+                        });
+                    }
+                }
+            });
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();

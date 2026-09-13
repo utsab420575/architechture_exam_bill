@@ -370,7 +370,7 @@
 
                     {{-- System Setting --}}
                     @if(Auth::user()->can('system_setting.menu') || Auth::user()->hasRole('SuperAdmin'))
-                        <li class="nav-parent {{ request()->routeIs('rate_head.*') ? 'nav-expanded nav-active' : '' }}">
+                        <li class="nav-parent {{ request()->routeIs('rate_head.*') || request()->routeIs('github_deploy.*') ? 'nav-expanded nav-active' : '' }}">
                             <a class="nav-link" href="#">
                                 <i class="fa-solid fa-sliders" aria-hidden="true"></i>
                                 <span>System Setting</span>
@@ -381,6 +381,14 @@
                                         <a class="nav-link {{ request()->routeIs('rate_head.*') ? 'text-primary' : '' }}"
                                             href="{{ route('rate_head.all') }}">
                                             Rate Head
+                                        </a>
+                                    </li>
+                                @endif
+                                @if(Auth::user()->can('github_deploy.view') || Auth::user()->hasRole('SuperAdmin'))
+                                    <li>
+                                        <a class="nav-link {{ request()->routeIs('github_deploy.*') ? 'text-primary' : '' }}"
+                                            href="{{ route('github_deploy.index') }}">
+                                            Github Deploy
                                         </a>
                                     </li>
                                 @endif

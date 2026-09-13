@@ -5,6 +5,7 @@ use App\Http\Controllers\CommitteeInputReviewController;
 use App\Http\Controllers\CommitteeInputSpecialController;
 use App\Http\Controllers\ContributorsController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\GithubDeployController;
 use App\Http\Controllers\ImportExportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -319,6 +320,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/rate-head/edit/{id}', 'EditRateHead')->name('rate_head.edit');
         Route::post('/rate-head/update', 'UpdateRateHead')->name('rate_head.update');
         Route::get('/rate-head/delete/{id}', 'DeleteRateHead')->name('rate_head.delete');
+    });
+
+    // System Setting - Github Deploy Routes
+    Route::prefix('system-setting')->controller(GithubDeployController::class)->group(function () {
+        Route::get('/github-deploy', 'Index')->name('github_deploy.index');
+        Route::post('/github-deploy/pull', 'Pull')->name('github_deploy.pull');
     });
 
 });

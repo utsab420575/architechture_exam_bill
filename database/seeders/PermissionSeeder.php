@@ -135,6 +135,10 @@ class PermissionSeeder extends Seeder
             ['name' => 'rate_head.update', 'group_name' => 'rate_head'],
             ['name' => 'rate_head.delete', 'group_name' => 'rate_head'],
 
+            // Github Deploy
+            ['name' => 'github_deploy.view', 'group_name' => 'github_deploy'],
+            ['name' => 'github_deploy.pull', 'group_name' => 'github_deploy'],
+
             // menu
             ['name' => 'import.menu', 'group_name' => 'menu'],
             ['name' => 'committee_input.menu', 'group_name' => 'menu'],

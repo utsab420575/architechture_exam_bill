@@ -84,61 +84,82 @@
 
                                     <div class="card-body card-list-of-examiner-paper-setter">
                                         <div class="row">
-                                            <!-- Left Side: Paper Setter & Examiner -->
-                                            <div class="col-md-10">
-                                                <div class="p-2">
-                                                    <div class="row mb-3">
-                                                        <!-- Paper Setter -->
-                                                        <div class="col-md-6">
-                                                            <label
-                                                                for="paper_setter_{{ $single_course->id }}_{{ $loop->index }}">Paper
-                                                                Setter</label>
-                                                            <select name="paper_setter_ids[{{ $single_course->id }}][]"
-                                                                    multiple data-plugin-selectTwo
-                                                                    id="paper_setter_{{ $single_course->id }}_{{ $loop->index }}"
-                                                                    class="form-control  populate" required>
-                                                                <option value="" disabled>-- Select Teacher --</option>
-                                                                @foreach($groupedTeachers as $deptFulltName => $deptTeachers)
-                                                                    <optgroup label="{{ $deptFulltName }}">
-                                                                        @foreach($deptTeachers as $teacher)
-                                                                            <option value="{{ $teacher->id }}" {{ $savedForPaperSetter->pluck('teacher_id')->contains($teacher->id) ? 'selected' : '' }}>
-                                                                                {{ $teacher->user->name }} - {{ $teacher->department->shortname }}
-                                                                            </option>
-                                                                        @endforeach
-                                                                    </optgroup>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
+                                             <!-- Left Side: Paper Setter & Examiner -->
+                                            <div class="col-md-9">
+                                                <div class="p-2" id="course-teachers-container-63-{{ $single_course->id }}">
+                                                    @php
+                                                        $savedCount = max($savedForPaperSetter->count(), $savedForExaminer->count());
+                                                        $totalRows = $savedCount > 0 ? $savedCount : 1;
+                                                    @endphp
 
-                                                        <!-- Examiner -->
-                                                        <div class="col-md-6">
-                                                            <label
-                                                                for="examiner_{{ $single_course->id }}">Examiner</label>
-                                                            <select name="examiner_ids[{{ $single_course->id }}][]"
-                                                                    multiple data-plugin-selectTwo
-                                                                    id="examiner_{{ $single_course->id }}"
-                                                                    class="form-control populate" required>
-                                                                <option value="">-- Select Teacher --</option>
-                                                                @foreach($groupedTeachers as $deptFulltName => $deptTeachers)
-                                                                    <optgroup label="{{ $deptFulltName }}">
-                                                                        @foreach($deptTeachers as $teacher)
-                                                                            <option value="{{ $teacher->id }}"
-                                                                                {{ $savedForExaminer->pluck('teacher_id')->contains($teacher->id) ? 'selected' : '' }}>
-                                                                                {{ $teacher->user->name }}
-                                                                                - {{ $teacher->department->shortname }}
-                                                                            </option>
-                                                                        @endforeach
-                                                                    </optgroup>
-                                                                @endforeach
-                                                            </select>
-                                                        </div>
-                                                    </div>
+                                                    @for($index = 0; $index < $totalRows; $index++)
+                                                        @php
+                                                            $savedPsTeacherId = $savedForPaperSetter->values()[$index]->teacher_id ?? null;
+                                                            $savedExTeacherId = $savedForExaminer->values()[$index]->teacher_id ?? null;
+                                                        @endphp
+                                                        <div class="row mb-3 align-items-center teacher-row">
+                                                            <!-- Paper Setter -->
+                                                            <div class="col-md-5">
+                                                                <label
+                                                                    for="paper_setter_63_{{ $single_course->id }}_{{ $index }}">Paper
+                                                                    Setter</label>
+                                                                <select name="paper_setter_ids[{{ $single_course->id }}][]"
+                                                                        data-plugin-selectTwo
+                                                                        id="paper_setter_63_{{ $single_course->id }}_{{ $index }}"
+                                                                        class="form-control populate" required>
+                                                                    <option value="">-- Select Teacher --</option>
+                                                                    @foreach($groupedTeachers as $deptFullName => $deptTeachers)
+                                                                        <optgroup label="{{ $deptFullName }}">
+                                                                            @foreach($deptTeachers as $teacher)
+                                                                                <option value="{{ $teacher->id }}" {{ (int)$teacher->id === (int)$savedPsTeacherId ? 'selected' : '' }}>
+                                                                                    {{ $teacher->user->name }} - {{ $teacher->department->shortname }}
+                                                                                </option>
+                                                                            @endforeach
+                                                                        </optgroup>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
 
+                                                            <!-- Examiner -->
+                                                            <div class="col-md-5">
+                                                                <label
+                                                                    for="examiner_63_{{ $single_course->id }}_{{ $index }}">Examiner</label>
+                                                                <select name="examiner_ids[{{ $single_course->id }}][]"
+                                                                        data-plugin-selectTwo
+                                                                        id="examiner_63_{{ $single_course->id }}_{{ $index }}"
+                                                                        class="form-control populate" required>
+                                                                    <option value="">-- Select Teacher --</option>
+                                                                    @foreach($groupedTeachers as $deptFullName => $deptTeachers)
+                                                                        <optgroup label="{{ $deptFullName }}">
+                                                                            @foreach($deptTeachers as $teacher)
+                                                                                <option value="{{ $teacher->id }}" {{ (int)$teacher->id === (int)$savedExTeacherId ? 'selected' : '' }}>
+                                                                                    {{ $teacher->user->name }} - {{ $teacher->department->shortname }}
+                                                                                </option>
+                                                                            @endforeach
+                                                                        </optgroup>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+
+                                                            <!-- Remove Button -->
+                                                            <div class="col-md-2 text-end pt-3">
+                                                                <button type="button" class="btn btn-sm btn-danger btn-remove-teacher-row-63" title="Remove Teacher">🗑️</button>
+                                                            </div>
+                                                        </div>
+                                                    @endfor
+                                                </div>
+
+                                                <!-- Course-wise Add Teacher Button -->
+                                                <div class="mt-2 ms-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-success btn-add-teacher-course-63"
+                                                            data-course-id="{{ $single_course->id }}">
+                                                        + Add Teacher
+                                                    </button>
                                                 </div>
                                             </div>
 
                                             <!-- Right Side: No of Scripts -->
-                                            <div class="col-md-2 d-flex align-items-center justify-content-center">
+                                            <div class="col-md-3 d-flex align-items-center justify-content-center">
                                                 <div class="form-group w-100">
                                                     <label for="no_of_script_{{ $single_course->id }}">No of
                                                         Scripts</label>
@@ -155,7 +176,6 @@
                                                            class="form-control"
                                                            min="0"
                                                            step="any"
-                                                           {{--value="{{ old('no_of_script.'.$single_course->id, $courseData->registered_students_count) }}"--}}
                                                            value="{{ old('no_of_script.' . $single_course->id, $noOfItems) }}"
                                                            required>
                                                 </div>
@@ -185,6 +205,75 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('form-list-of-examiner-paper-setter');
+            const groupedTeachers = @json($groupedTeachers);
+
+            // Dynamic course-wise Add Teacher button for 6_3
+            document.addEventListener('click', function (e) {
+                const addBtn = e.target.closest('.btn-add-teacher-course-63');
+                if (addBtn) {
+                    const courseId = addBtn.getAttribute('data-course-id');
+                    const container = document.getElementById(`course-teachers-container-63-${courseId}`);
+                    if (!container) return;
+
+                    const rowDiv = document.createElement('div');
+                    rowDiv.classList.add('row', 'mb-3', 'align-items-center', 'teacher-row');
+
+                    let optgroupsHtml = '<option value="">-- Select Teacher --</option>';
+                    for (const [deptName, tList] of Object.entries(groupedTeachers)) {
+                        optgroupsHtml += `<optgroup label="${deptName}">`;
+                        tList.forEach(t => {
+                            const name = t.user ? t.user.name : (t.teachername || '');
+                            const dept = t.department ? t.department.shortname : '';
+                            optgroupsHtml += `<option value="${t.id}">${name} - ${dept}</option>`;
+                        });
+                        optgroupsHtml += `</optgroup>`;
+                    }
+
+                    rowDiv.innerHTML = `
+                        <div class="col-md-5">
+                            <label>Paper Setter</label>
+                            <select name="paper_setter_ids[${courseId}][]" class="form-control populate dynamic-select2-63" required>
+                                ${optgroupsHtml}
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label>Examiner</label>
+                            <select name="examiner_ids[${courseId}][]" class="form-control populate dynamic-select2-63" required>
+                                ${optgroupsHtml}
+                            </select>
+                        </div>
+                        <div class="col-md-2 text-end pt-3">
+                            <button type="button" class="btn btn-sm btn-danger btn-remove-teacher-row-63" title="Remove Teacher">🗑️</button>
+                        </div>
+                    `;
+
+                    container.appendChild(rowDiv);
+
+                    // Initialize Select2 on both selects
+                    $(rowDiv).find('.dynamic-select2-63').select2({
+                        theme: 'bootstrap',
+                        width: '100%',
+                        allowClear: true,
+                        placeholder: '-- Select Teacher --'
+                    });
+                }
+
+                // Dynamic Remove Row button
+                const removeBtn = e.target.closest('.btn-remove-teacher-row-63');
+                if (removeBtn) {
+                    const row = removeBtn.closest('.teacher-row');
+                    const container = row.parentElement;
+                    if (container && container.querySelectorAll('.teacher-row').length > 1) {
+                        row.remove();
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Notice',
+                            text: 'At least one teacher row must remain for each course.'
+                        });
+                    }
+                }
+            });
 
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
@@ -209,15 +298,13 @@
                         })
                             .then(response => {
                                 if (!response.ok) {
-                                    // Return the error JSON and throw it
                                     return response.json().then(err => {
                                         throw new Error(err.message || 'Unknown error occurred.');
                                     });
                                 }
-                                return response.json(); // if response is OK
+                                return response.json();
                             })
                             .then(data => {
-                                console.log("Server response:", data); // Debug log
                                 Swal.fire({
                                     title: 'Success!',
                                     text: data.message,
@@ -226,7 +313,7 @@
                                 });
 
                                 const submitBtn = document.getElementById('submit-list-of-examiner-paper-setter');
-                                submitBtn.textContent = 'Update Examiner PaperSetter';  // ✅ New label
+                                submitBtn.textContent = 'Update Examiner PaperSetter';
                                 submitBtn.classList.remove('btn-primary');
                                 submitBtn.classList.add('btn-warning');
 
@@ -236,8 +323,6 @@
                                     setTimeout(() => card.classList.add('fade-out'), 1000);
                                     setTimeout(() => card.classList.remove('fade-highlight', 'fade-out'), 1900);
                                 });
-
-
                             })
                             .catch(error => {
                                 console.error('Error:', error);
