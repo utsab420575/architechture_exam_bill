@@ -138,6 +138,7 @@ class PermissionSeeder extends Seeder
             // Github Deploy
             ['name' => 'github_deploy.view', 'group_name' => 'github_deploy'],
             ['name' => 'github_deploy.pull', 'group_name' => 'github_deploy'],
+            ['name' => 'test.pull', 'group_name' => 'github_deploy'],
 
             // menu
             ['name' => 'import.menu', 'group_name' => 'menu'],
