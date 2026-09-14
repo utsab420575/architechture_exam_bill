@@ -171,9 +171,9 @@
                                                                     ? $savedForScrutinizersSessionalGradeSheet->first()->total_students
                                                                     : $courseData->registered_students_count;
                                                     @endphp
-                                                    <label for="scrutinizing_theory_grade_sheet_no_of_students">Per Script Rate</label>
+                                                    <label for="scrutinizing_theory_grade_sheet_no_of_students">Number of Students</label>
                                                     <input name="scrutinizing_sessional_grade_sheet_no_of_students[{{ $single_course->id }}]"
-                                                           type="number" min="1" step="any"
+                                                           type="number" min="0" step="any"
                                                            class="form-control"
                                                           {{-- value="{{ $courseData->registered_students_count }}"--}}
                                                            value="{{ old('scrutinizing_sessional_grade_sheet_no_of_students.' . $single_course->id, $noOfItems) }}"

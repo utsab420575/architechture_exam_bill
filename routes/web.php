@@ -7,6 +7,7 @@ use App\Http\Controllers\ContributorsController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\GithubDeployController;
 use App\Http\Controllers\ImportExportController;
+use App\Http\Controllers\PermissionSyncController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportReviewController;
@@ -92,6 +93,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/regular/scrutinizers/sessional/grade/sheet/store','storeScrutinizersSessionalGradeSheet')->name('committee.input.scrutinizers.sessional.grade.sheet.store');
         Route::post('/regular/prepare/computerized/result/store','storePreparedComputerizedResult')->name('committee.input.prepare.computerized.result.store');
         Route::post('/regular/verified/computerized/grade/sheet/store', 'storeVerifiedComputerizedGradeSheet')->name('committee.input.verified.computerized.grade.sheet.store');
+        Route::post('/regular/tabulation/store', 'storeTabulation')->name('committee.input.tabulation.store');
         Route::post('/regular/conducted/central/oral/exam/store', 'storeConductedCentralOralExam')->name('committee.input.conducted.central.oral.exam.store');
 
         Route::post('/regular/stencil/cutting/committee/store', 'storeStencilCuttingCommittee')->name('committee.input.stencil.cutting.committee.store');
@@ -101,10 +103,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/regular/verified/final/graduation/result/store', 'storeVerifiedFinalGraduationResult')->name('committee.input.verified.final.graduation.result.store');
         Route::post('/regular/conducted/central/oral/exam/store', 'storeConductedCentralOralExam')->name('committee.input.conducted.central.oral.exam.store');
         Route::post('/regular/involved/survey/store', 'storeInvolvedSurvey')->name('committee.input.involved.survey.store');
+        Route::post('/regular/involved/industrial/attachment/store', 'storeInvolvedIndustrialAttachment')->name('committee.input.involved.industrial.attachment.store');
         Route::post('/regular/conducted/preliminary/viva/store', 'storeConductedPreliminaryViva')->name('committee.input.conducted.preliminary.viva.store');
         Route::post('/regular/examined/thesis/project/store', 'storeExaminedThesisProject')->name('committee.input.examined.thesis.project.store');
         Route::post('/regular/conducted/oral/examination/store','storeConductedOralExamination')->name('committee.input.conducted.oral.examination.store');
         Route::post('/regular/supervised/thesis/project/store', 'storeSupervisedThesisProject')->name('committee.input.supervised.thesis.project.store');
+        Route::post('/regular/course/profile/store', 'storeCourseProfile')->name('committee.input.course.profile.store');
         Route::post('/regular/honorarium/coordinator/store', 'storeHonorariumCoordinator')->name('committee.input.honorarium.coordinator.store');
         Route::post('/regular/honorarium/chairman/store', 'storeHonorariumChairman')->name('committee.input.honorarium.chairman.store');
     });
@@ -326,6 +330,12 @@ Route::middleware('auth')->group(function () {
     Route::prefix('system-setting')->controller(GithubDeployController::class)->group(function () {
         Route::get('/github-deploy', 'Index')->name('github_deploy.index');
         Route::post('/github-deploy/pull', 'Pull')->name('github_deploy.pull');
+    });
+
+    // System Setting - Permission Sync Routes
+    Route::prefix('system-setting')->controller(PermissionSyncController::class)->group(function () {
+        Route::get('/permission-sync', 'Index')->name('permission_sync.index');
+        Route::post('/permission-sync/sync', 'Sync')->name('permission_sync.sync');
     });
 
 });

@@ -38,12 +38,14 @@
                                 <input type="number" id="class_test_rate" name="class_test_rate" value="{{$ct_per_class_test_rate??60}}" step="any" class="form-control" placeholder="Enter class test rate" required>
                             </div>
                         </div>
+                        {{-- Order 4.b: Class Assignment (Commented out)
                         <div class="col-md-4 mb-4">
                             <div class="form-group">
                                 <label for="class_assignment_rate">Per Class Assignment Rate</label>
-                                <input type="number" id="class_assignment_rate" name="class_assignment_rate" value="{{$ca_per_class_assignment_rate??50}}" step="any" class="form-control" placeholder="Enter class assignment rate" required>
+                                <input type="number" id="class_assignment_rate" name="class_assignment_rate" value="{{$ca_per_class_assignment_rate??50}}" step="any" class="form-control" placeholder="Enter class assignment rate">
                             </div>
                         </div>
+                        --}}
                     </div>
                     <div class="row">
                         @if(isset($all_course_with_teacher->courses))

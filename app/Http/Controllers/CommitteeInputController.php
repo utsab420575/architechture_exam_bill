@@ -599,7 +599,7 @@ class CommitteeInputController extends Controller
             'class_test_teachers_ids' => 'required|array',
             'no_of_students_ct' => 'required|array',
             'class_test_rate' => 'required|numeric|min:1',
-            'class_assignment_rate' => 'required|numeric|min:1',
+            // 'class_assignment_rate' => 'required|numeric|min:1', // Order 4.b commented out
             'sid' => 'required|numeric',
         ]);
 
@@ -614,16 +614,16 @@ class CommitteeInputController extends Controller
         $noOfStudents = $request->input('no_of_students_ct', []);
         $sessionId = $request->sid;
         $class_test_rate = $request->class_test_rate;
-        $class_assignment_rate = $request->class_assignment_rate;
+        // $class_assignment_rate = $request->class_assignment_rate; // Order 4.b commented out
         $exam_type_record=ExamType::where('type','regular')->first();
         $exam_type = $exam_type_record->id;
 
         // ✅ Log incoming request
-        Log::info('🔍 Incoming Class Test & Assignment Submission', [
+        Log::info('🔍 Incoming Class Test Teacher Submission', [
             'class_test_teachers_ids' => $classTestTeacherData,
             'no_of_students_ct' => $noOfStudents,
             'class_test_rate' => $class_test_rate,
-            'class_assignment_rate' => $class_assignment_rate,
+            // 'class_assignment_rate' => $class_assignment_rate, // Order 4.b commented out
             'session_id' => $sessionId,
         ]);
 
@@ -642,7 +642,8 @@ class CommitteeInputController extends Controller
                 'status' => 1,
             ]);
 
-            // Order 4.b: Class Assignment
+            /*
+            // Order 4.b: Class Assignment (Commented out)
             $rateHead_4_b = $this->getOrCreateRateHead('4.b', [
                 'head' => 'Class Assignment',
                 'dist_type' => 'Share',
@@ -653,6 +654,7 @@ class CommitteeInputController extends Controller
                 'marge_with' => null,
                 'status' => 1,
             ]);
+            */
 
             $session_info=Session::where('ugr_id',$sessionId)->where('exam_type_id',$exam_type)->where('status',1)->first();
 
@@ -667,6 +669,8 @@ class CommitteeInputController extends Controller
                 ]
             );
 
+            /*
+            // Order 4.b: RateAmount (Commented out)
             $rateAmount_4_b = $this->getOrCreateRateAmount(
                 $rateHead_4_b->id,
                 $session_info->id,
@@ -677,6 +681,7 @@ class CommitteeInputController extends Controller
                     'max_rate'     => null,
                 ]
             );
+            */
 
             // RateAssign
             // Delete old entries for Order 4 (Class Test)
@@ -685,11 +690,13 @@ class CommitteeInputController extends Controller
                 ->where('rate_head_id', $rateHead->id)
                 ->delete();
 
-            // Delete old entries for Order 4.b (Class Assignment)
+            /*
+            // Delete old entries for Order 4.b (Class Assignment) (Commented out)
             RateAssign::where('session_id', $session_info->id)
                 ->where('exam_type_id', $exam_type)
                 ->where('rate_head_id', $rateHead_4_b->id)
                 ->delete();
+            */
 
             foreach ($classTestTeacherData as $courseId => $teacherIds) {
                 $courseno = $request->input("courseno.$courseId");
@@ -703,7 +710,7 @@ class CommitteeInputController extends Controller
 
                 $studentCount = $teacherCount > 0 ? $input_studentCount * 2 : 0;
 
-                Log::info('📘 Class Test & Assignment Course-wise Input Data', [
+                Log::info('📘 Class Test Course-wise Input Data', [
                     'course_id' => $courseId,
                     'teacher_ids' => $teacherIds,
                     'student_count' => $studentCount,
@@ -714,7 +721,7 @@ class CommitteeInputController extends Controller
 
                 foreach ($teacherIds as $teacherId) {
                     $total_amount = $studentCount * $rateAmount->default_rate;
-                    $total_amount_4_b = $studentCount * $rateAmount_4_b->default_rate;
+                    // $total_amount_4_b = $studentCount * $rateAmount_4_b->default_rate; // Order 4.b commented out
 
                     Log::info('📄 Saving Class Test RateAssign', [
                         'teacher_id' => $teacherId,
@@ -740,7 +747,8 @@ class CommitteeInputController extends Controller
                         'total_teachers' => $teacher_count,
                     ]);
 
-                    // Save Order 4.b (Class Assignment)
+                    /*
+                    // Save Order 4.b (Class Assignment) (Commented out)
                     RateAssign::create([
                         'teacher_id' => $teacherId,
                         'rate_head_id' => $rateHead_4_b->id,
@@ -754,6 +762,7 @@ class CommitteeInputController extends Controller
                         'total_students' => $input_studentCount,
                         'total_teachers' => $teacher_count,
                     ]);
+                    */
                 }
             }
 
@@ -1462,7 +1471,7 @@ class CommitteeInputController extends Controller
             }
 
             $studentCount = $studentData[$courseId] ?? null;
-            if ($studentCount === null || $studentCount === '' || $studentCount < 1) {
+            if ($studentCount === null || $studentCount === '' || !is_numeric($studentCount) || $studentCount < 0) {
                 $errors["no_of_students.$courseId"] = "Enter a valid number of students for course ID $courseId.";
             }
         }
@@ -1523,7 +1532,7 @@ class CommitteeInputController extends Controller
                 $studentCount = (int) $studentData[$courseId];
                 $teacherCount = count($teacherIds);
 
-                if ($teacherCount > 0 && $studentCount > 0) {
+                if ($teacherCount > 0 && $studentCount >= 0) {
                     $studentsPerTeacher = $studentCount / $teacherCount;
 
                     foreach ($teacherIds as $teacherId) {
@@ -1620,7 +1629,7 @@ class CommitteeInputController extends Controller
             }
 
             $studentCount = $studentData[$courseId] ?? null;
-            if ($studentCount === null || $studentCount === '' || $studentCount < 1) {
+            if ($studentCount === null || $studentCount === '' || !is_numeric($studentCount) || $studentCount < 0) {
                 $errors["no_of_students.$courseId"] = "Enter a valid number of students for course ID $courseId.";
             }
         }
@@ -1676,7 +1685,7 @@ class CommitteeInputController extends Controller
                 $studentCount = (int) $studentData[$courseId];
                 $teacherCount = count($teacherIds);
 
-                if ($teacherCount > 0 && $studentCount > 0) {
+                if ($teacherCount > 0 && $studentCount >= 0) {
                     $studentsPerTeacher = $studentCount / $teacherCount;
 
                     foreach ($teacherIds as $teacherId) {
@@ -1775,7 +1784,7 @@ class CommitteeInputController extends Controller
             }
 
             $studentCount = $studentData[$courseId] ?? null;
-            if ($studentCount === null || $studentCount === '' || $studentCount < 1) {
+            if ($studentCount === null || $studentCount === '' || !is_numeric($studentCount) || $studentCount < 0) {
                 $errors["no_of_students.$courseId"] = "Enter a valid number of students for course ID $courseId.";
             }
         }
@@ -1828,20 +1837,12 @@ class CommitteeInputController extends Controller
                 ->where('rate_head_id', $rateHead->id)
                 ->delete();
 
-             //RateAssign
-            // Delete old entries (rateAssign)
-            RateAssign::where('session_id', $session_info->id)
-                ->where('exam_type_id', $exam_type)
-                ->where('rate_head_id', $rateHead->id)
-                ->delete();
-
-
             // Step 5: Assign to teachers
             foreach ($teacherData as $courseId => $teacherIds) {
                 $studentCount = (int) $studentData[$courseId];
                 $teacherCount = count($teacherIds);
 
-                if ($teacherCount > 0 && $studentCount > 0) {
+                if ($teacherCount > 0 && $studentCount >= 0) {
                     $studentsPerTeacher = $studentCount / $teacherCount;
 
                     foreach ($teacherIds as $teacherId) {
@@ -2035,6 +2036,136 @@ class CommitteeInputController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('❌ Error saving Verified Computerized Result: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'An error occurred while saving data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //order=8.e
+    public function storeTabulation(Request $request)
+    {
+        $teacherIds = $request->input('tabulation_teachers', []);
+        $totalStudents = (float) $request->input('tabulation_total_students', 0);
+        $sessionId = $request->sid;
+        $tabulation_rate = $request->tabulation_rate ?? 90;
+        $exam_type_record = ExamType::where('type', 'regular')->first();
+        $exam_type = $exam_type_record->id;
+
+        Log::info('📥 Received Tabulation Data', [
+            'session_id' => $sessionId,
+            'teacher_ids' => $teacherIds,
+            'total_students' => $totalStudents,
+            'rate' => $tabulation_rate
+        ]);
+
+        $errors = [];
+
+        // Validation
+        if (empty($teacherIds)) {
+            $errors['tabulation_teachers'] = 'Select at least one teacher.';
+        }
+
+        if ($totalStudents === null || $totalStudents === '' || !is_numeric($totalStudents) || $totalStudents < 0) {
+            $errors['tabulation_total_students'] = 'Enter a valid number of students.';
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $errors
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Step 1: RateHead (8.e)
+            $rateHead = RateHead::where('order_no', '8.e')->first();
+            if (!$rateHead) {
+                $rateHead = $this->getOrCreateRateHead('8.e', [
+                    'head' => 'Tabulation',
+                    'sub_head' => null,
+                    'dist_type' => 'share',
+                    'enable_min' => 0,
+                    'enable_max' => 0,
+                    'is_course' => 0,
+                    'is_student_count' => 0,
+                    'marge_with' => null,
+                    'status' => 1,
+                ]);
+            }
+
+            Log::info('✅ RateHead for 8.e confirmed.', $rateHead->toArray());
+
+            // Step 2: Get or create session
+            $session_info = LocalData::getOrCreateRegularSession($sessionId, $exam_type);
+
+            // Step 3: RateAmount
+            $rateAmount = $this->getOrCreateRateAmount(
+                $rateHead->id,
+                $session_info->id,
+                $exam_type,
+                [
+                    'default_rate' => $tabulation_rate,
+                    'min_rate'     => null,
+                    'max_rate'     => null,
+                ]
+            );
+
+            // RateAssign: Delete old entries
+            RateAssign::where('session_id', $session_info->id)
+                ->where('exam_type_id', $exam_type)
+                ->where('rate_head_id', $rateHead->id)
+                ->delete();
+
+            // Step 4: Assign to teachers
+            $total_teacher = count($teacherIds);
+            $studentsPerTeacher = $total_teacher > 0 ? ($totalStudents / $total_teacher) : 0;
+
+            foreach ($teacherIds as $teacherId) {
+                $calculatedAmount = $studentsPerTeacher * $rateAmount->default_rate;
+
+                Log::info('📘 Tabulation RateAssign Store', [
+                    'teacher_id'   => $teacherId,
+                    'rate_head_id' => $rateHead->id,
+                    'session_id'   => $session_info->id,
+                    'no_of_items'  => $studentsPerTeacher,
+                    'total_amount' => $calculatedAmount,
+                    'total_students' => $totalStudents,
+                    'total_teachers' => $total_teacher,
+                    'exam_type_id' => $exam_type
+                ]);
+
+                $rateAssign = new RateAssign();
+                $rateAssign->teacher_id = $teacherId;
+                $rateAssign->rate_head_id = $rateHead->id;
+                $rateAssign->session_id = $session_info->id;
+                $rateAssign->no_of_items = $studentsPerTeacher;
+                $rateAssign->total_amount = $calculatedAmount;
+                $rateAssign->exam_type_id = $exam_type;
+                $rateAssign->total_students = $totalStudents;
+                $rateAssign->total_teachers = $total_teacher;
+                $rateAssign->save();
+            }
+
+            DB::commit();
+
+            Log::info('✅ Tabulation Assignments saved.', [
+                'rate_head_id' => $rateHead->id,
+                'session_id' => $session_info->id,
+            ]);
+
+            return response()->json([
+                'message' => 'Tabulation committee saved successfully.',
+                'teacher_ids' => $teacherIds,
+                'total_students' => $totalStudents
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Error saving Tabulation: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'An error occurred while saving data.',
@@ -2931,6 +3062,176 @@ class CommitteeInputController extends Controller
         }
     }
 
+    // Order 7.g: Involved Industrial attachment/training
+    public function storeInvolvedIndustrialAttachment(Request $request)
+    {
+        $teacherData  = $request->input('involved_industrial_attachment_teacher_ids', []);   // [courseId => [teacherId, ...]]
+        $studentData  = $request->input('involved_industrial_attachment_no_of_students', []); // [courseId => total_students]
+        $sessionId    = $request->sid;
+        $attachment_rate  = $request->attachment_rate ?? $request->servey_rate ?? 750;
+
+        // Hidden course metadata
+        $courseNos    = $request->input('courseno', []);                     // [courseId => courseno]
+        $courseTitles = $request->input('coursetitle', []);                  // [courseId => coursetitle]
+        $regCounts    = $request->input('registered_students_count', []);    // [courseId => registered_students_count]
+
+        $exam_type_record = ExamType::where('type', 'regular')->first();
+        $exam_type        = $exam_type_record->id ?? null;
+
+        Log::info('📥 Received Involved Industrial Attachment (per course)', [
+            'session_id'   => $sessionId,
+            'teacher_data' => $teacherData,
+            'student_data' => $studentData,
+            'rate'         => $attachment_rate,
+        ]);
+
+        // ---------- Basic validation ----------
+        $errors = [];
+
+        if (empty($teacherData)) {
+            $errors['involved_industrial_attachment_teacher_ids'] = 'You must select at least one teacher.';
+        }
+        if (empty($studentData)) {
+            $errors['involved_industrial_attachment_no_of_students'] = 'You must provide number of students.';
+        }
+
+        foreach ($teacherData as $courseId => $teacherIds) {
+            // teachers
+            if (empty($teacherIds)) {
+                $errors["involved_industrial_attachment_teacher_ids.$courseId"] = "Select at least one teacher for course ID $courseId.";
+            }
+
+            // students (allowing >= 0)
+            $count = $studentData[$courseId] ?? null;
+            if ($count === null || $count === '' || !is_numeric($count) || (float)$count < 0) {
+                $errors["involved_industrial_attachment_no_of_students.$courseId"] = "Enter a valid number of students for course ID $courseId.";
+            }
+
+            // course metadata
+            if (empty($courseNos[$courseId]) || empty($courseTitles[$courseId])) {
+                $errors["course_meta.$courseId"] = "Missing course metadata for course ID $courseId.";
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors'  => $errors,
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 1) RateHead (7.g)
+            $rateHead = RateHead::where('order_no', '7.g')->first();
+            if (!$rateHead) {
+                $rateHead = $this->getOrCreateRateHead('7.g', [
+                    'head'             => 'Sessional',
+                    'sub_head'         => 'Industrial attachment/training',
+                    'dist_type'        => 'Individual',
+                    'enable_min'       => 0,
+                    'enable_max'       => 0,
+                    'is_course'        => 1,
+                    'is_student_count' => 1,
+                    'marge_with'       => null,
+                    'status'           => 1,
+                ]);
+            }
+            Log::info('✅ RateHead confirmed for 7.g', $rateHead->toArray());
+
+            // 2) Session
+            $session = LocalData::getOrCreateRegularSession($sessionId, $exam_type);
+
+            // 3) RateAmount
+            $rateAmount = $this->getOrCreateRateAmount(
+                $rateHead->id,
+                $session->id,
+                $exam_type,
+                [
+                    'default_rate' => $attachment_rate,
+                    'min_rate'     => null,
+                    'max_rate'     => null,
+                ]
+            );
+            Log::info('✅ RateAmount confirmed for 7.g', $rateAmount->toArray());
+
+            // 4) Clear previous assignments for this head/session/exam_type
+            RateAssign::where('session_id', $session->id)
+                ->where('exam_type_id', $exam_type)
+                ->where('rate_head_id', $rateHead->id)
+                ->delete();
+
+            // 5) Save per course: split students equally among selected teachers
+            foreach ($teacherData as $courseId => $teacherIds) {
+                $teacherIds      = array_values(array_unique(array_filter((array)$teacherIds)));
+                $totalStudents   = (float) ($studentData[$courseId] ?? 0);
+                $teacherCount    = count($teacherIds);
+
+                $courseno        = $courseNos[$courseId]    ?? null;
+                $coursetitle     = $courseTitles[$courseId] ?? null;
+                $registeredCount = $regCounts[$courseId]    ?? null;
+
+                if ($teacherCount <= 0 || $totalStudents < 0) {
+                    continue;
+                }
+
+                $studentsPerTeacher = $teacherCount > 0 ? ($totalStudents / $teacherCount) : 0;
+                $rate               = (float) $rateAmount->default_rate;
+
+                foreach ($teacherIds as $tid) {
+                    $amount = $studentsPerTeacher * $rate;
+
+                    Log::info('📘 Involved Industrial Attachment Assign (per course)', [
+                        'teacher_id'      => $tid,
+                        'rate_head_id'    => $rateHead->id,
+                        'session_id'      => $session->id,
+                        'exam_type_id'    => $exam_type,
+                        'no_of_items'     => $studentsPerTeacher,
+                        'total_amount'    => $amount,
+                        'course_code'     => $courseno,
+                        'course_title'    => $coursetitle,
+                        'total_students'  => $totalStudents,
+                        'total_teachers'  => $teacherCount,
+                        'registered_cnt'  => $registeredCount,
+                    ]);
+
+                    RateAssign::create([
+                        'teacher_id'      => $tid,
+                        'rate_head_id'    => $rateHead->id,
+                        'session_id'      => $session->id,
+                        'exam_type_id'    => $exam_type,
+
+                        'no_of_items'     => $studentsPerTeacher,
+                        'total_amount'    => $amount,
+
+                        // helpful metadata
+                        'course_code'     => $courseno,
+                        'course_name'     => $coursetitle,
+                        'total_students'  => $totalStudents,
+                        'total_teachers'  => $teacherCount,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Involved Industrial attachment/training saved successfully!',
+                'involved_industrial_attachment_teacher_ids'     => $teacherData,
+                'involved_industrial_attachment_no_of_students'  => $studentData,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Error saving Involved Industrial Attachment: '.$e->getMessage());
+
+            return response()->json([
+                'message' => 'An error occurred while saving Involved Industrial Attachment data.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
 
 
 
@@ -3408,6 +3709,149 @@ class CommitteeInputController extends Controller
             return response()->json([
                 'message' => 'An error occurred.',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Order 17: Course Profile
+    public function storeCourseProfile(Request $request)
+    {
+        $teacherData  = $request->input('course_profile_teacher_ids', []);   // [courseId => [teacherId, ...]]
+        $sessionId    = $request->sid;
+        $course_profile_rate = $request->course_profile_rate ?? 6000;
+
+        // Hidden course metadata
+        $courseNos    = $request->input('courseno', []);                     // [courseId => courseno]
+        $courseTitles = $request->input('coursetitle', []);                  // [courseId => coursetitle]
+
+        $exam_type_record = ExamType::where('type', 'regular')->first();
+        $exam_type        = $exam_type_record->id ?? null;
+
+        Log::info('📥 Received Course Profile Data', [
+            'session_id'   => $sessionId,
+            'teacher_data' => $teacherData,
+            'rate'         => $course_profile_rate,
+        ]);
+
+        // Validation
+        $errors = [];
+        if (empty($teacherData)) {
+            $errors['course_profile_teacher_ids'] = 'You must select at least one teacher.';
+        }
+
+        foreach ($teacherData as $courseId => $teacherIds) {
+            $cleaned = array_values(array_unique(array_filter((array)$teacherIds)));
+            if (empty($cleaned)) {
+                $errors["course_profile_teacher_ids.$courseId"] = "Select at least one teacher for course ID $courseId.";
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors'  => $errors,
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 1) RateHead (17)
+            $rateHead = RateHead::where('order_no', '17')->first();
+            if (!$rateHead) {
+                $rateHead = $this->getOrCreateRateHead('17', [
+                    'head'             => 'Course Profile',
+                    'sub_head'         => null,
+                    'dist_type'        => 'share',
+                    'enable_min'       => 0,
+                    'enable_max'       => 0,
+                    'is_course'        => 0,
+                    'is_student_count' => 0,
+                    'marge_with'       => null,
+                    'status'           => 1,
+                ]);
+            }
+            Log::info('✅ RateHead confirmed for 17', $rateHead->toArray());
+
+            // 2) Session
+            $session = LocalData::getOrCreateRegularSession($sessionId, $exam_type);
+
+            // 3) RateAmount
+            $rateAmount = $this->getOrCreateRateAmount(
+                $rateHead->id,
+                $session->id,
+                $exam_type,
+                [
+                    'default_rate' => $course_profile_rate,
+                    'min_rate'     => null,
+                    'max_rate'     => null,
+                ]
+            );
+            Log::info('✅ RateAmount confirmed for 17', $rateAmount->toArray());
+
+            // 4) Clear previous assignments for this head/session/exam_type
+            RateAssign::where('session_id', $session->id)
+                ->where('exam_type_id', $exam_type)
+                ->where('rate_head_id', $rateHead->id)
+                ->delete();
+
+            // 5) Save per course: split rate equally among selected teachers
+            foreach ($teacherData as $courseId => $teacherIds) {
+                $teacherIds   = array_values(array_unique(array_filter((array)$teacherIds)));
+                $teacherCount = count($teacherIds);
+
+                $courseno     = $courseNos[$courseId]    ?? null;
+                $coursetitle  = $courseTitles[$courseId] ?? null;
+
+                if ($teacherCount <= 0) {
+                    continue;
+                }
+
+                $rate        = (float) $rateAmount->default_rate;
+                $amount      = $rate / $teacherCount;
+                $share       = 1 / $teacherCount;
+
+                foreach ($teacherIds as $tid) {
+                    Log::info('📘 Course Profile Assign (per course)', [
+                        'teacher_id'      => $tid,
+                        'rate_head_id'    => $rateHead->id,
+                        'session_id'      => $session->id,
+                        'exam_type_id'    => $exam_type,
+                        'no_of_items'     => $share,
+                        'total_amount'    => $amount,
+                        'course_code'     => $courseno,
+                        'course_title'    => $coursetitle,
+                        'total_teachers'  => $teacherCount,
+                    ]);
+
+                    RateAssign::create([
+                        'teacher_id'      => $tid,
+                        'rate_head_id'    => $rateHead->id,
+                        'session_id'      => $session->id,
+                        'exam_type_id'    => $exam_type,
+                        'no_of_items'     => $share,
+                        'total_amount'    => $amount,
+                        'course_code'     => $courseno,
+                        'course_name'     => $coursetitle,
+                        'total_students'  => null,
+                        'total_teachers'  => $teacherCount,
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Course Profile assignments saved successfully!',
+                'course_profile_teacher_ids' => $teacherData,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Error saving Course Profile: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'An error occurred while saving Course Profile data.',
+                'error'   => $e->getMessage(),
             ], 500);
         }
     }

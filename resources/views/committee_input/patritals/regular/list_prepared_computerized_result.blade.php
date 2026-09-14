@@ -177,9 +177,9 @@
                                                                     ? $savedForPreparedComputerizedResult->first()->total_students
                                                                     : $courseData->registered_students_count;
                                                     @endphp
-                                                    <label for="prepared_computerized_result_no_of_students">Per Script Rate</label>
+                                                    <label for="prepared_computerized_result_no_of_students">Number of Students</label>
                                                     <input name="prepared_computerized_result_no_of_students[{{ $single_course->id }}]"
-                                                           type="number" min="1" step="any"
+                                                           type="number" min="0" step="any"
                                                            class="form-control"
                                                            {{--value="{{ $courseData->registered_students_count }}"--}}
                                                            value="{{ old('prepared_computerized_result_no_of_students.' . $single_course->id, $noOfItems) }}"

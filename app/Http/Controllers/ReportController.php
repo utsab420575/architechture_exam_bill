@@ -129,7 +129,8 @@ class ReportController extends Controller
         Log::info('📦 RateHead Order 4', optional($rateHead_order_4)->toArray() ?? []);
         Log::info('📦 RateAmount Order 4', optional($rateAmount_order_4)->toArray() ?? []);
 
-        //Order 4.b - Class Assignment
+        //Order 4.b - Class Assignment (Commented out)
+        /*
         $rateHead_order_4_b = RateHead::where('order_no', '4.b')->first();
         $rateAmount_order_4_b = RateAmount::where('session_id', $session_info->id)
             ->where('exam_type_id',$exam_type)
@@ -140,6 +141,9 @@ class ReportController extends Controller
             ->first();
         Log::info('📦 RateHead Order 4.b', optional($rateHead_order_4_b)->toArray() ?? []);
         Log::info('📦 RateAmount Order 4.b', optional($rateAmount_order_4_b)->toArray() ?? []);
+        */
+        $rateHead_order_4_b = null;
+        $rateAmount_order_4_b = null;
 
         //Order 5
         $rateHead_order_5 = RateHead::where('order_no', 5)->first();
@@ -236,6 +240,18 @@ class ReportController extends Controller
         Log::info('📦 RateHead Order 1', optional($rateHead_order_7f)->toArray() ?? []);
         Log::info('📦 RateAmount Order 1', optional($rateHead_order_7f)->toArray() ?? []);
 
+        //Order 7.g
+        $rateHead_order_7g = RateHead::where('order_no', '7.g')->first();
+        $rateAmount_order_7g = RateAmount::where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->whereHas('rateHead', function ($query) {
+                $query->where('order_no', '7.g');
+            })
+            ->with('rateHead')
+            ->first();
+        Log::info('📦 RateHead Order 7.g', optional($rateHead_order_7g)->toArray() ?? []);
+        Log::info('📦 RateAmount Order 7.g', optional($rateAmount_order_7g)->toArray() ?? []);
+
 
         //Order 8.a
         $rateHead_order_8a = RateHead::where('order_no', '8.a')->first();
@@ -290,6 +306,18 @@ class ReportController extends Controller
             ->first(); // or get() if you expect multiple
         Log::info('📦 RateHead Order 1', optional($rateHead_order_8d)->toArray() ?? []);
         Log::info('📦 RateAmount Order 1', optional($rateHead_order_8d)->toArray() ?? []);
+
+        //Order 8.e
+        $rateHead_order_8e = RateHead::where('order_no', '8.e')->first();
+        $rateAmount_order_8e = RateAmount::where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->whereHas('rateHead', function ($query) {
+                $query->where('order_no', '8.e');
+            })
+            ->with('rateHead')
+            ->first();
+        Log::info('📦 RateHead Order 8.e', optional($rateHead_order_8e)->toArray() ?? []);
+        Log::info('📦 RateAmount Order 8.e', optional($rateAmount_order_8e)->toArray() ?? []);
 
 
         //Order 9
@@ -431,6 +459,18 @@ class ReportController extends Controller
             ->first(); // or get() if you expect multiple
         Log::info('📦 RateHead Order 1', optional($rateHead_order_16)->toArray() ?? []);
         Log::info('📦 RateAmount Order 1', optional($rateHead_order_16)->toArray() ?? []);
+
+        //Order 17
+        $rateHead_order_17 = RateHead::where('order_no', '17')->first();
+        $rateAmount_order_17 = RateAmount::where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->whereHas('rateHead', function ($query) {
+                $query->where('order_no', '17');
+            })
+            ->with('rateHead')
+            ->first();
+        Log::info('📦 RateHead Order 17', optional($rateHead_order_17)->toArray() ?? []);
+        Log::info('📦 RateAmount Order 17', optional($rateAmount_order_17)->toArray() ?? []);
         //dd($rateAmount_order_1);
 
         $pdf = Pdf::loadView('report.pdf_download.regular_report', [
@@ -464,6 +504,8 @@ class ReportController extends Controller
             'rateAmount_order_7e'=>$rateAmount_order_7e,
             'rateHead_order_7f' => $rateHead_order_7f,
             'rateAmount_order_7f'=>$rateAmount_order_7f,
+            'rateHead_order_7g' => $rateHead_order_7g,
+            'rateAmount_order_7g'=>$rateAmount_order_7g,
 
             'rateHead_order_8a' => $rateHead_order_8a,
             'rateAmount_order_8a'=>$rateAmount_order_8a,
@@ -473,6 +515,8 @@ class ReportController extends Controller
             'rateAmount_order_8c'=>$rateAmount_order_8c,
             'rateHead_order_8d' => $rateHead_order_8d,
             'rateAmount_order_8d'=>$rateAmount_order_8d,
+            'rateHead_order_8e' => $rateHead_order_8e,
+            'rateAmount_order_8e'=>$rateAmount_order_8e,
 
             'rateHead_order_9' => $rateHead_order_9,
             'rateAmount_order_9'=>$rateAmount_order_9,
@@ -503,6 +547,8 @@ class ReportController extends Controller
 
             'rateHead_order_16' => $rateHead_order_16,
             'rateAmount_order_16'=>$rateAmount_order_16,
+            'rateHead_order_17' => $rateHead_order_17,
+            'rateAmount_order_17'=>$rateAmount_order_17,
 
         ])->setPaper('legal', 'portrait'); // or 'landscape';
 

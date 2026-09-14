@@ -79,36 +79,40 @@
 
         @include('committee_input.patritals.regular.list_default_input')
 
-         @include('committee_input.patritals.regular.list_scrutinizing_theory_grade_sheet')
+        {{--10.a List of Teachers for the Scrutinizing of Grade Sheet (Theoretical) (@**/- per student per subject)--}}
+        @include('committee_input.patritals.regular.list_scrutinizing_theory_grade_sheet')
 
 
 
-
+        {{--10.b List of Teachers for the Scrutinizing of Grade Sheet(Sessional) (@ **- per student per subject):--}}
         @if($session_info->year!=6&& $session_info->semester!=3)
             @include('committee_input.patritals.regular.list_scrutinizing_sessional_grade_sheet')
         @endif
 
 
-
+        {{--8.d List of Teachers Prepared Computerized Result (@ **/- per student per subject)--}}
         @include('committee_input.patritals.regular.list_prepared_computerized_result')
 
 
-
+        {{--8.c List of Teachers Verified Computerized Grade Sheets & GPA List (@**/- per student)--}}
         @include('committee_input.patritals.regular.list_verified_computerized_grade_sheet')
 
+        {{--8.e Tabulation (@**/- per student)--}}
+        @include('committee_input.patritals.regular.list_tabulation')
 
 
-         @include('committee_input.patritals.regular.list_stencil_cutting_question_paper')
+
+        @include('committee_input.patritals.regular.list_stencil_cutting_question_paper')
 
 
         @include('committee_input.patritals.regular.list_printing_question_paper')
 
 
 
-       @include('committee_input.patritals.regular.list_comparison_question_paper')
+        @include('committee_input.patritals.regular.list_comparison_question_paper')
 
 
-       {{-- order-13:not done--}}
+        {{-- order-13:not done--}}
         @include('committee_input.patritals.regular.list_advisor_student')
 
         {{--order 16--}}
@@ -120,12 +124,16 @@
 
         {{-- order-7.e--}}
 
-            @include('committee_input.patritals.regular.list_conducted_central_oral_examination')
+        @include('committee_input.patritals.regular.list_conducted_central_oral_examination')
 
 
         {{-- order-7.f--}}
 
-            @include('committee_input.patritals.regular.list_involved_survey')
+        @include('committee_input.patritals.regular.list_involved_survey')
+
+        {{-- order-7.g--}}
+
+        @include('committee_input.patritals.regular.list_involved_industrial_attachment')
 
 
         {{-- order-6.c--}}
@@ -152,12 +160,16 @@
 
 
 
+        {{-- order-17--}}
+        @include('committee_input.patritals.regular.list_course_profile')
+
         {{-- order-14--}}
         @include('committee_input.patritals.regular.list_honorarium_coordinator')
 
 
         {{-- order-15--}}
         @include('committee_input.patritals.regular.list_honorarium_chairman')
+
 
 
 

@@ -370,7 +370,7 @@
 
                     {{-- System Setting --}}
                     @if(Auth::user()->can('system_setting.menu') || Auth::user()->hasRole('SuperAdmin'))
-                        <li class="nav-parent {{ request()->routeIs('rate_head.*') || request()->routeIs('github_deploy.*') ? 'nav-expanded nav-active' : '' }}">
+                        <li class="nav-parent {{ request()->routeIs('rate_head.*') || request()->routeIs('github_deploy.*') || request()->routeIs('permission_sync.*') ? 'nav-expanded nav-active' : '' }}">
                             <a class="nav-link" href="#">
                                 <i class="fa-solid fa-sliders" aria-hidden="true"></i>
                                 <span>System Setting</span>
@@ -389,6 +389,14 @@
                                         <a class="nav-link {{ request()->routeIs('github_deploy.*') ? 'text-primary' : '' }}"
                                             href="{{ route('github_deploy.index') }}">
                                             Github Deploy
+                                        </a>
+                                    </li>
+                                @endif
+                                @if(Auth::user()->can('permission_sync.view') || Auth::user()->hasRole('SuperAdmin'))
+                                    <li>
+                                        <a class="nav-link {{ request()->routeIs('permission_sync.*') ? 'text-primary' : '' }}"
+                                            href="{{ route('permission_sync.index') }}">
+                                            Permission Sync
                                         </a>
                                     </li>
                                 @endif

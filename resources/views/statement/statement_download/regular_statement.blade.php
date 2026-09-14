@@ -429,8 +429,8 @@
 @endif
 
 
-{{-- Class Assignment (order 4.b) --}}
-@if(isset($assigns_order_4_b) && $assigns_order_4_b->isNotEmpty())
+{{-- Order 4.b: Class Assignment (Commented out - change false to true or remove false to enable) --}}
+@if(false && isset($assigns_order_4_b) && $assigns_order_4_b->isNotEmpty())
     @php $rate_4_b = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '4.b'); @endphp
     <h3 style="margin-top:15px;margin-bottom: 4px">
         Internal Class Assignment (@ {{ $rate_4_b ? number_format($rate_4_b->default_rate, 0) : '50' }}/- per class assignment per student)
@@ -501,7 +501,7 @@
     {{-- D) order 5 --}}
     @php $rate = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '5'); @endphp
     <h3 style="margin-top:15px;margin-bottom: 4px">
-        D) Sessional (@ {{ $rate ? number_format($rate->default_rate, 0) : '' }}/- per contact hour per week; min 1500/- per examiner)
+        D) Sessional (@ {{ $rate ? number_format($rate->default_rate, 0) : '' }}/- per contact hour per week; min {{ $rate && $rate->min_rate ? number_format($rate->min_rate, 0) : '1600' }}/- per examiner)
     </h3>
 
     <table class="body_table_5" style="margin-top: 0px;" border="1" cellpadding="6">
@@ -1041,6 +1041,45 @@
     </table>
 @endif
 
+{{-- (order 8.e) --}}
+@if($assigns_order_8_e->isNotEmpty())
+    @php $rate = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '8.e'); @endphp
+    <h3 style="margin-top:15px;margin-bottom: 4px">
+        (ii) List of teacher in tabulation (&#64; {{ $rate ? number_format($rate->default_rate, 0) : '90' }}/- per student)
+    </h3>
+
+    <table class="body_table_1" style="margin-top: 0px;" border="1" cellpadding="6">
+        <thead>
+        <tr>
+            <th style="width:10%;">Sl. No.</th>
+            <th style="width:65%;">Name and Address</th>
+            <th style="width:25%;">No. of Students</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach($assigns_order_8_e as $i => $assign)
+            @php
+                $person     = $assign->teacher ?? $assign->employee;
+                $students   = (int)($assign->total_students ?? 0);
+                $teachers   = (int)($assign->total_teachers ?? 1); // fallback
+            @endphp
+            <tr>
+                <td style="text-align:center;">{{ $i + 1 }}</td>
+                <td style="text-align:left;">
+                    {{ $person?->user?->name }},
+                    {{ $person?->designation?->designation }},
+                    {{ $person?->department?->fullname }},
+                    {{ $person?->university?->short_name ?? 'DUET' }}, {{ $person?->university?->city ?? 'Gazipur' }}
+                </td>
+                <td style="text-align:center;">
+                    {{ $students }}/{{ $teachers }}
+                </td>
+            </tr>
+        @endforeach
+        </tbody>
+    </table>
+@endif
+
 
 
 {{-- L) (order 12.a) --}}
@@ -1338,6 +1377,45 @@
     </table>
 @endif
 
+{{-- (order 7.g) --}}
+@if($assigns_order_7_g->isNotEmpty())
+    @php $rate = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '7.g'); @endphp
+    <h3 style="margin-top:15px;margin-bottom: 4px">
+        ii) List of teachers involved Industrial attachment/training (&#64; {{ $rate ? number_format($rate->default_rate, 0) : '750' }}/- per student)
+    </h3>
+
+    <table class="body_table_1" style="margin-top: 0px;" border="1" cellpadding="6">
+        <thead>
+        <tr>
+            <th style="width:10%;">Sl. No.</th>
+            <th style="width:65%;">Name and Address</th>
+            <th style="width:25%;">No. of Students</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach($assigns_order_7_g as $i => $assign)
+            @php
+                $t = $assign->teacher;
+            @endphp
+            <tr>
+                <td style="text-align:center;">{{ $i + 1 }}</td>
+                <td style="text-align:left;">
+                    {{ $t->user->name ?? 'N/A' }},
+                    {{ $t->designation->designation ?? '' }},
+                    {{ $t->department->fullname ?? '' }}, {{ $assign?->university?->short_name ?? 'DUET' }}, {{ $assign?->university?->city ?? 'Gazipur' }}
+                </td>
+                @php
+                    $students = (float) ($assign->total_students ?? 0);
+                @endphp
+                <td style="text-align:center;">
+                    {{ fmod($students, 1) == 0 ? (int)$students : number_format($students, 2, '.', '') }}
+                </td>
+            </tr>
+        @endforeach
+
+        </tbody>
+    </table>
+@endif
 
 {{-- Q) (order 6.c) --}}
 @if($assigns_order_6_c->isNotEmpty())
@@ -1519,6 +1597,64 @@
     </table>
 @endif
 
+
+{{-- (order 17) --}}
+@if($assigns_order_17->isNotEmpty())
+    @php $rate = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '17'); @endphp
+    <h3 style="margin-top:15px;margin-bottom: 4px">
+        List of Teachers Involved in Course Profile (&#64; {{ $rate ? number_format($rate->default_rate, 0) : '6,000' }}/- per course)
+    </h3>
+
+    <table class="body_table_1" style="margin-top: 0px;" border="1" cellpadding="6">
+        <thead>
+        <tr>
+            <th style="width:10%;">Sl. No.</th>
+            <th style="width:20%;">Course</th>
+            <th style="width:55%;">Name and Address</th>
+            <th style="width:15%;">Share</th>
+        </tr>
+        </thead>
+        <tbody>
+        @php $sl = 1; @endphp
+        @foreach($assigns_order_17 as $courseCode => $rows)
+            @php
+                $rows    = collect($rows);
+                $rowspan = $rows->count();
+                $first   = $rows->first();
+                $firstPerson = $first->teacher ?? $first->employee;
+            @endphp
+            <tr>
+                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $sl }}</td>
+                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $courseCode }}</td>
+                <td style="text-align:left;">
+                    {{ optional(optional($firstPerson)->user)->name }},
+                    {{ optional(optional($firstPerson)->designation)->designation }},
+                    {{ optional(optional($firstPerson)->department)->fullname }},
+                    {{ $firstPerson?->university?->short_name ?? 'DUET' }}, {{ $firstPerson?->university?->city ?? 'Gazipur' }}
+                </td>
+                <td style="text-align:center;">
+                    {{ isset($first->total_teachers) ? '/'.$first->total_teachers : '1' }}
+                </td>
+            </tr>
+            @foreach($rows->skip(1) as $row)
+                @php $person = $row->teacher ?? $row->employee; @endphp
+                <tr>
+                    <td style="text-align:left;">
+                        {{ optional(optional($person)->user)->name }},
+                        {{ optional(optional($person)->designation)->designation }},
+                        {{ optional(optional($person)->department)->fullname }},
+                        {{ $person?->university?->short_name ?? 'DUET' }}, {{ $person?->university?->city ?? 'Gazipur' }}
+                    </td>
+                    <td style="text-align:center;">
+                        {{ isset($row->total_teachers) ? '/'.$row->total_teachers : '1' }}
+                    </td>
+                </tr>
+            @endforeach
+            @php $sl++; @endphp
+        @endforeach
+        </tbody>
+    </table>
+@endif
 
 {{-- U) (order 14) --}}
 @if($assigns_order_14->isNotEmpty())

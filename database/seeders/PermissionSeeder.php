@@ -139,6 +139,10 @@ class PermissionSeeder extends Seeder
             ['name' => 'github_deploy.view', 'group_name' => 'github_deploy'],
             ['name' => 'github_deploy.pull', 'group_name' => 'github_deploy'],
 
+            // Permission Sync
+            ['name' => 'permission_sync.view', 'group_name' => 'permission_sync'],
+            ['name' => 'permission_sync.sync', 'group_name' => 'permission_sync'],
+
 
             // menu
             ['name' => 'import.menu', 'group_name' => 'menu'],

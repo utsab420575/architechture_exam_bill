@@ -47,6 +47,8 @@ class RegularSessionFormDataService
 
         $verified_computerized_per_student_per_subject_rate = null;
 
+        $tabulation_per_student_rate = null;
+
         $stencill_cutting_per_stencil_rate = null;
 
         $print_question_paper_rate = null;
@@ -69,6 +71,8 @@ class RegularSessionFormDataService
 
         $supervised_theis_per_student_rate = null;
 
+        $course_profile_per_course_rate = null;
+
         $honorium_coordinator = null;
 
         $honorium_chairman = null;
@@ -85,6 +89,7 @@ class RegularSessionFormDataService
         $savedRateAssignScrutinizersSessionalGradeSheet = collect();
         $savedRateAssignPreparedComputerizedResult = collect();
         $savedRateAssignVerifiedComputerizedGradeSheet = collect();
+        $savedRateAssignTabulation = collect();
         $savedRateAssignStencilCuttingCommittee = collect();
         $savedRateAssignPrintingQuestion = collect();
         $savedRateAssignComparisonCommittee = collect();
@@ -92,10 +97,12 @@ class RegularSessionFormDataService
         $savedRateAssignVerifiedFinalGraduationResult = collect();
         $savedRateAssignConductedCentralOralExam = collect();
         $savedRateAssignInvolvedSurvey = collect();
+        $savedRateAssignInvolvedIndustrialAttachment = collect();
         $savedRateAssignConductedPreliminaryViva = collect();
         $savedRateAssignExaminedThesisProject = collect();
         $savedRateAssignConductedOralExamination = collect();
         $savedRateAssignSupervisedThesisProject = collect();
+        $savedRateAssignCourseProfile = collect();
         $savedRateAssignHonorariumCoordinator = collect();
         $savedRateAssignHonorariumChairman = collect();
 
@@ -171,7 +178,8 @@ class RegularSessionFormDataService
                 $ct_per_class_test_rate = $classTestData?->default_rate;
             }
 
-            // For Class Assignment (Order 4.b)
+            /*
+            // For Class Assignment (Order 4.b) (Commented out)
             $rateHeadCA = RateHead::where('order_no', '4.b')->first();
             if ($rateHeadCA) {
                 $classAssignmentData = RateAmount::where('exam_type_id', $exam_type)
@@ -180,6 +188,7 @@ class RegularSessionFormDataService
                     ->first();
                 $ca_per_class_assignment_rate = $classAssignmentData?->default_rate;
             }
+            */
 
             // For Sessional Course Teacher
             $rateHeadSCT = RateHead::where('order_no', 5)->first();
@@ -313,6 +322,22 @@ class RegularSessionFormDataService
                 $verified_computerized_per_student_per_subject_rate = $VerifiedComputerizedGradeSheetData?->default_rate;
             }
 
+            // For Tabulation (8.e)
+            $rateTabulation = RateHead::where('order_no', '=', '8.e')->first();
+            if ($rateTabulation) {
+                $savedRateAssignTabulation = RateAssign::getTeachersFromCommittee(
+                    $session_info->id,
+                    $exam_type,
+                    $rateTabulation->id
+                );
+
+                $TabulationData = RateAmount::where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $rateTabulation->id)
+                    ->where('session_id', $session_info->id)
+                    ->first();
+                $tabulation_per_student_rate = $TabulationData?->default_rate;
+            }
+
             // For StencilCuttingCommittee
             $rateStencilCuttingCommittee = RateHead::where('order_no', '=', '12.a')->first();
             if ($rateStencilCuttingCommittee) {
@@ -426,6 +451,40 @@ class RegularSessionFormDataService
                     ->first();
 
                 $involved_survey_per_student_rate = $InvolvedSurveyData?->default_rate;
+            }
+
+            // For InvolvedIndustrialAttachment (7.g)
+            $rateInvolvedIndustrialAttachment = RateHead::where('order_no', '=', '7.g')->first();
+            if ($rateInvolvedIndustrialAttachment) {
+                $savedRateAssignInvolvedIndustrialAttachment = RateAssign::getTeacherWithCourse(
+                    $session_info->id,
+                    $exam_type,
+                    $rateInvolvedIndustrialAttachment->id
+                );
+
+                $InvolvedIndustrialAttachmentData = RateAmount::where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $rateInvolvedIndustrialAttachment->id)
+                    ->where('session_id', $session_info->id)
+                    ->first();
+
+                $involved_industrial_attachment_per_student_rate = $InvolvedIndustrialAttachmentData?->default_rate;
+            }
+
+            // For CourseProfile (17)
+            $rateCourseProfile = RateHead::where('order_no', '=', '17')->first();
+            if ($rateCourseProfile) {
+                $savedRateAssignCourseProfile = RateAssign::getTeacherWithCourse(
+                    $session_info->id,
+                    $exam_type,
+                    $rateCourseProfile->id
+                );
+
+                $CourseProfileData = RateAmount::where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $rateCourseProfile->id)
+                    ->where('session_id', $session_info->id)
+                    ->first();
+
+                $course_profile_per_course_rate = $CourseProfileData?->default_rate;
             }
 
             // For ConductedPreliminaryViva
@@ -551,6 +610,7 @@ class RegularSessionFormDataService
             'scrunizing_sessional_grade_sheet_per_subject_rate',
             'prepared_computerized_per_student_per_subject_rate',
             'verified_computerized_per_student_per_subject_rate',
+            'tabulation_per_student_rate',
             'stencill_cutting_per_stencil_rate',
             'print_question_paper_rate',
             'comparison_rate',
@@ -558,10 +618,12 @@ class RegularSessionFormDataService
             'final_graduation_per_student_rate',
             'conducted_central_oral_per_thesis_rate',
             'involved_survey_per_student_rate',
+            'involved_industrial_attachment_per_student_rate',
             'conducted_preliminary_viva_per_student_rate',
             'examined_thesis_per_student_rate',
             'conducted_oral_per_student_rate',
             'supervised_theis_per_student_rate',
+            'course_profile_per_course_rate',
             'honorium_coordinator',
             'honorium_chairman',
             'savedModerationAssigns',
@@ -576,6 +638,7 @@ class RegularSessionFormDataService
             'savedRateAssignScrutinizersSessionalGradeSheet',
             'savedRateAssignPreparedComputerizedResult',
             'savedRateAssignVerifiedComputerizedGradeSheet',
+            'savedRateAssignTabulation',
             'savedRateAssignStencilCuttingCommittee',
             'savedRateAssignPrintingQuestion',
             'savedRateAssignComparisonCommittee',
@@ -583,10 +646,12 @@ class RegularSessionFormDataService
             'savedRateAssignVerifiedFinalGraduationResult',
             'savedRateAssignConductedCentralOralExam',
             'savedRateAssignInvolvedSurvey',
+            'savedRateAssignInvolvedIndustrialAttachment',
             'savedRateAssignConductedPreliminaryViva',
             'savedRateAssignExaminedThesisProject',
             'savedRateAssignConductedOralExamination',
             'savedRateAssignSupervisedThesisProject',
+            'savedRateAssignCourseProfile',
             'savedRateAssignHonorariumCoordinator',
             'savedRateAssignHonorariumChairman'
         );

@@ -121,7 +121,8 @@ class StatementController extends Controller
             ->get()
             ->groupBy('course_code');
 
-        //order 4.b - Class Assignment
+        /*
+        //order 4.b - Class Assignment (Commented out)
         $rateHead_order_4_b = RateHead::where('order_no', '4.b')->first();
 
         $assigns_order_4_b = RateAssign::with([
@@ -136,6 +137,8 @@ class StatementController extends Controller
             ->orderBy('id')
             ->get()
             ->groupBy('course_code');
+        */
+        $assigns_order_4_b = collect();
 
 
         //order 5
@@ -272,6 +275,18 @@ class StatementController extends Controller
             ->when($rateHead_order_8_c, fn($q) => $q->where('rate_head_id', $rateHead_order_8_c->id))
             ->get();
 
+        //order 8.e
+        $rateHead_order_8_e = RateHead::where('order_no', '8.e')->first();
+
+        $assigns_order_8_e = RateAssign::with([
+            'teacher.user','teacher.designation','teacher.department',
+            'employee.user','employee.designation','employee.department','rateHead'
+        ])
+            ->where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->when($rateHead_order_8_e, fn($q) => $q->where('rate_head_id', $rateHead_order_8_e->id))
+            ->get();
+
 
         // order 12.a
         $rateHead_order_12_a = RateHead::where('order_no', '12.a')->first();
@@ -365,6 +380,18 @@ class StatementController extends Controller
             ->groupBy('teacher_id')
             ->get();
 
+        // order 7.g
+        $rateHead_order_7_g = RateHead::where('order_no', '7.g')->first();
+
+        $assigns_order_7_g = RateAssign::with(['teacher.user','teacher.designation','teacher.department'])
+            ->select('teacher_id')
+            ->selectRaw('COALESCE(SUM(no_of_items), 0)   as total_students')  // sum of no_of_items
+            ->where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->when($rateHead_order_7_g, fn($q) => $q->where('rate_head_id', $rateHead_order_7_g->id))
+            ->groupBy('teacher_id')
+            ->get();
+
 
         // order 6.c
         $rateHead_order_6_c = RateHead::where('order_no', '6.c')->first();
@@ -423,6 +450,22 @@ class StatementController extends Controller
             ->get();
 
 
+        // order 17
+        $rateHead_order_17 = RateHead::where('order_no', '17')->first();
+
+        $assigns_order_17 = RateAssign::with([
+            'teacher.user','teacher.designation','teacher.department','teacher.university',
+            'employee.user','employee.designation','employee.department','rateHead'
+        ])
+            ->where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->when($rateHead_order_17, fn($q) => $q->where('rate_head_id', $rateHead_order_17->id))
+            ->whereNotNull('course_code')
+            ->orderBy('course_code')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('course_code');
+
         // order 14
         $rateHead_order_14 = RateHead::where('order_no', '14')->first();
 
@@ -473,6 +516,7 @@ class StatementController extends Controller
             'assigns_order_10_b'=> $assigns_order_10_b,
             'assigns_order_8_d' => $assigns_order_8_d,
             'assigns_order_8_c' => $assigns_order_8_c,
+            'assigns_order_8_e' => $assigns_order_8_e,
 
             'assigns_order_12_a'=> $assigns_order_12_a,
             'assigns_order_12_b'=> $assigns_order_12_b,
@@ -482,10 +526,12 @@ class StatementController extends Controller
             'assigns_order_16'  => $assigns_order_16,
             'assigns_order_7_e' => $assigns_order_7_e,
             'assigns_order_7_f' => $assigns_order_7_f,
+            'assigns_order_7_g' => $assigns_order_7_g,
             'assigns_order_6_c' => $assigns_order_6_c,
             'assigns_order_6_a' => $assigns_order_6_a,
             'assigns_order_6_d' => $assigns_order_6_d,
             'assigns_order_6_b' => $assigns_order_6_b,
+            'assigns_order_17'  => $assigns_order_17,
             'assigns_order_14'  => $assigns_order_14,
             'assigns_order_15'  => $assigns_order_15,
         ]);
