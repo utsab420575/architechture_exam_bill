@@ -111,7 +111,7 @@
 
                             <div class="text-end mt-3">
                                 <button id="submit-list-of-prepare-sessional-grade-sheet" type="submit" class="btn btn-primary">
-                                    Submit Theory Grade Sheet Committee
+                                    Submit Sessional Grade Sheet Committee
                                 </button>
                             </div>
                         </div>

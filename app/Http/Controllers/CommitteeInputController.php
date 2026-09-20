@@ -1055,14 +1055,16 @@ class CommitteeInputController extends Controller
                 ->where('exam_type_id', $exam_type)
                 ->where('rate_head_id', $rateHead->id)
                 ->delete();
+
+            // Pass 1: Group courses and script assignments by teacher
+            $teacherCourseMap = [];
+
             foreach ($scrutinizer_teacher_ids as $courseId => $teacherIds) {
                 $studentCount = (int) $scrutinizers_no_of_students[$courseId];
                 $teacherCount = count($teacherIds);
 
                 $courseno = $request->input("courseno.$courseId");
                 $coursetitle = $request->input("coursetitle.$courseId");
-                //$registered_students_count = $request->input("registered_students_count.$courseId");
-                //$teacher_count = $request->input("teacher_count.$courseId");
 
                 Log::info("📌 Processing Course ID: $courseId", [
                     'teacher_count' => $teacherCount,
@@ -1073,27 +1075,60 @@ class CommitteeInputController extends Controller
                     $studentsPerTeacher = $studentCount / $teacherCount;
 
                     foreach ($teacherIds as $teacherId) {
-                        $calculatedAmount = $studentsPerTeacher * $rateAmount->default_rate;
-                        $total_amount = max($rateAmount->min_rate, $calculatedAmount);
-
-                        RateAssign::create([
-                            'teacher_id' => $teacherId,
-                            'rate_head_id' => $rateHead->id,
-                            'session_id' => $session_info->id,
-                            'no_of_items' => $studentsPerTeacher,
-                            'total_amount' => $total_amount,
-                            'course_code' => $courseno,
-                            'course_name' => $coursetitle,
+                        $teacherCourseMap[$teacherId][] = [
+                            'course_code'    => $courseno,
+                            'course_name'    => $coursetitle,
                             'total_students' => $studentCount,
                             'total_teachers' => $teacherCount,
-                            'exam_type_id' => $exam_type
-                        ]);
-
-                        Log::debug("✅ RateAssign created for teacher $teacherId", [
-                            'amount' => $total_amount,
-                            'items' => $studentsPerTeacher
-                        ]);
+                            'no_of_items'    => $studentsPerTeacher,
+                            'earned_amount'  => $studentsPerTeacher * $rateAmount->default_rate,
+                        ];
                     }
+                }
+            }
+
+            // Pass 2: Calculate total earned per teacher across all assigned courses, enforce minimum, and store
+            foreach ($teacherCourseMap as $teacherId => $courses) {
+                $totalScripts     = array_sum(array_column($courses, 'no_of_items'));
+                $totalEarned      = $totalScripts * (float)$rateAmount->default_rate;
+                $finalTotalAmount = max((float)($rateAmount->min_rate ?? 0), (float)$totalEarned);
+
+                $allocatedSum = 0;
+                $courseCount  = count($courses);
+
+                foreach ($courses as $index => $c) {
+                    if ($finalTotalAmount == $totalEarned || $totalScripts <= 0) {
+                        // Earned reached or exceeded minimum: keep natural earned amount
+                        $courseAmount = round($c['earned_amount'], 2);
+                    } else {
+                        // Below minimum: distribute the minimum proportionally across courses
+                        if ($index === $courseCount - 1) {
+                            // Assign exact remainder to last course to avoid rounding discrepancies
+                            $courseAmount = round($finalTotalAmount - $allocatedSum, 2);
+                        } else {
+                            $courseAmount = round(($c['no_of_items'] / $totalScripts) * $finalTotalAmount, 2);
+                            $allocatedSum += $courseAmount;
+                        }
+                    }
+
+                    RateAssign::create([
+                        'teacher_id'     => $teacherId,
+                        'rate_head_id'   => $rateHead->id,
+                        'session_id'     => $session_info->id,
+                        'no_of_items'    => $c['no_of_items'],
+                        'total_amount'   => $courseAmount,
+                        'course_code'    => $c['course_code'],
+                        'course_name'    => $c['course_name'],
+                        'total_students' => $c['total_students'],
+                        'total_teachers' => $c['total_teachers'],
+                        'exam_type_id'   => $exam_type
+                    ]);
+
+                    Log::debug("✅ RateAssign created for teacher $teacherId", [
+                        'course' => $c['course_code'],
+                        'amount' => $courseAmount,
+                        'items'  => $c['no_of_items']
+                    ]);
                 }
             }
 

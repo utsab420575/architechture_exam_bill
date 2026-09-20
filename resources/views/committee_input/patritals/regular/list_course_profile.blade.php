@@ -48,12 +48,18 @@
                     <div class="row">
                         <div class="col-md-12">
                             @php
-                                $coursesList = ($session_info->year != 6 && $session_info->semester != 3)
+                                $rawCourses = ($session_info->year != 6 && $session_info->semester != 3)
                                     ? ($all_theory_sessional_courses_with_student_count->courses ?? $all_course_with_teacher->courses ?? [])
                                     : ($all_course_with_teacher->courses ?? []);
+
+                                // Filter out hyphenated courses (e.g. "ARCH-4112")
+                                $coursesList = collect($rawCourses)->filter(function ($courseData) {
+                                    $courseNo = $courseData->courseObject->courseno ?? '';
+                                    return !str_contains($courseNo, '-');
+                                });
                             @endphp
 
-                            @if(!empty($coursesList))
+                            @if($coursesList->isNotEmpty())
                                 @foreach($coursesList as $courseData)
                                     @php
                                         $single_course = $courseData->courseObject;

@@ -575,59 +575,77 @@
     <table class="body_table_9" style="margin-top: 0px;" border="1" cellpadding="6">
         <thead>
         <tr>
-            <th style="width:10%;">Sl. No.</th>
-            <th style="width:10%;">Course</th>
-            <th style="width:60%;">Name &amp; Address</th>
-            <th style="width:10%;">No. of half Sripts</th>
+            <th style="width:8%;">Sl. No.</th>
+            <th style="width:14%;"></th>
+            <th style="width:48%;">Name &amp; Address</th>
+            <th style="width:20%;">No. of half Sripts</th>
             <th style="width:10%;">Total</th>
         </tr>
         </thead>
         <tbody>
-        @php $sl = 1; @endphp
+        @php
+            $sl = 1;
+            // Group assignments by teacher / person
+            $assigns_order_9_by_teacher = $assigns_order_9->flatten()->groupBy(function ($item) {
+                return $item->teacher_id ? 't_' . $item->teacher_id : 'e_' . $item->employee_id;
+            });
+        @endphp
 
-        @foreach($assigns_order_9 as $courseCode => $rows)
+        @foreach($assigns_order_9_by_teacher as $personKey => $teacherCourses)
             @php
-                $rows         = collect($rows);
-                $rowspan      = $rows->count();
-                $first        = $rows->first();
-                $firstPerson  = $first->teacher ?? $first->employee;
+                $teacherCourses = collect($teacherCourses)->sortBy('course_code')->values();
+                $rowspan        = $teacherCourses->count();
+                $firstCourse    = $teacherCourses->first();
+                $firstPerson    = $firstCourse->teacher ?? $firstCourse->employee;
 
-                $course_code  = $first->course_code ?? $courseCode;
-                $course_name  = $first->course_name ?? '';
-                // Nos. of Student = total_students * 2 (2 is fixed)
-                $studentCount = (int)($first->total_students ?? 0);
+                // Numbers for each course
+                $scriptCounts   = $teacherCourses->map(function ($c) {
+                    return (int)($c->total_students ?? (($c->no_of_items ?? 0) * 2));
+                })->values();
 
-                 $scriptsText = (int)($first->total_students ?? 0) . '/' . (int)($first->total_teachers ?? $rowspan);
+                $sumParts       = $scriptCounts->implode('+');
+                $numerator      = $scriptCounts->count() > 1 ? "({$sumParts})" : $sumParts;
+
+                $totalScripts   = $scriptCounts->sum();
+                $teacherTotal   = $totalScripts / 2;
+                $displayTotal   = (fmod($teacherTotal, 1) == 0) ? (int)$teacherTotal : number_format($teacherTotal, 2);
             @endphp
 
-            {{-- first line for this course (carries the rowspans) --}}
+            {{-- First row for this teacher (carries rowspans for Sl. No, Name & Address, No. of half Sripts, Total) --}}
             <tr>
-                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $sl }}</td>
-                <td rowspan="{{ $rowspan }}" style="text-align:center;">
-                    {{ $course_code }}
+                <td rowspan="{{ $rowspan }}" style="text-align:center; vertical-align:middle;">
+                    {{ $sl }}
                 </td>
-                <td style="text-align:left;">
+                <td style="text-align:center; vertical-align:middle;">
+                    {{ $firstCourse->course_code }}
+                </td>
+                <td rowspan="{{ $rowspan }}" style="text-align:left; vertical-align:middle;">
                     {{ optional(optional($firstPerson)->user)->name }},
                     {{ optional(optional($firstPerson)->designation)->designation }},
                     {{ optional(optional($firstPerson)->department)->fullname }},
                     {{ $firstPerson?->university?->short_name ?? 'DUET' }}, {{ $firstPerson?->university?->city ?? 'Gazipur' }}
                 </td>
-                <td  style="text-align:center;">{{ $scriptsText }}</td>
-                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $studentCount }}</td>
+                <td rowspan="{{ $rowspan }}" style="text-align:center; vertical-align:middle;">
+                    <div style="display: inline-block; vertical-align: middle; text-align: center;">
+                        <div style="border-bottom: 1px solid #000; padding-bottom: 2px; padding-left: 2px; padding-right: 2px;">
+                            {{ $numerator }}
+                        </div>
+                        <div style="padding-top: 2px;">
+                            2
+                        </div>
+                    </div>
+                </td>
+                <td rowspan="{{ $rowspan }}" style="text-align:center; vertical-align:middle;">
+                    {{ $displayTotal }}
+                </td>
             </tr>
 
-            {{-- remaining teachers for this same course --}}
-            @foreach($rows->skip(1) as $row)
-                @php $person = $row->teacher ?? $row->employee; @endphp
+            {{-- Remaining courses for this same teacher --}}
+            @foreach($teacherCourses->skip(1) as $courseRow)
                 <tr>
-                    <td style="text-align:left;">
-                        {{ optional(optional($person)->user)->name }},
-                        {{ optional(optional($person)->designation)->designation }},
-                        {{ optional(optional($person)->department)->fullname }},
-                        {{ $person?->university?->short_name ?? 'DUET' }}, {{ $person?->university?->city ?? 'Gazipur' }}
+                    <td style="text-align:center; vertical-align:middle;">
+                        {{ $courseRow->course_code }}
                     </td>
-                    <td  style="text-align:center;">{{ $scriptsText }}</td>
-
                 </tr>
             @endforeach
 
@@ -1600,7 +1618,19 @@
 
 {{-- (order 17) --}}
 @if($assigns_order_17->isNotEmpty())
-    @php $rate = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '17'); @endphp
+    @php
+        $rate = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '17');
+        if (!$rate) {
+            $rateHead17 = \App\Models\RateHead::where('order_no', '17')->first();
+            if ($rateHead17) {
+                $rate = \App\Models\RateAmount::where('session_id', $session_info->id)
+                    ->where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $rateHead17->id)
+                    ->first();
+            }
+        }
+        $rateVal = $rate ? (fmod((float)$rate->default_rate, 1) == 0 ? (int)$rate->default_rate : $rate->default_rate) : 6000;
+    @endphp
     <h3 style="margin-top:15px;margin-bottom: 4px">
         List of Teachers Involved in Course Profile (&#64; {{ $rate ? number_format($rate->default_rate, 0) : '6,000' }}/- per course)
     </h3>
@@ -1611,7 +1641,7 @@
             <th style="width:10%;">Sl. No.</th>
             <th style="width:20%;">Course</th>
             <th style="width:55%;">Name and Address</th>
-            <th style="width:15%;">Share</th>
+            <th style="width:15%;">Section</th>
         </tr>
         </thead>
         <tbody>
@@ -1622,6 +1652,7 @@
                 $rowspan = $rows->count();
                 $first   = $rows->first();
                 $firstPerson = $first->teacher ?? $first->employee;
+                $firstTeachers = (int)($first->total_teachers ?? $rowspan);
             @endphp
             <tr>
                 <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $sl }}</td>
@@ -1633,11 +1664,14 @@
                     {{ $firstPerson?->university?->short_name ?? 'DUET' }}, {{ $firstPerson?->university?->city ?? 'Gazipur' }}
                 </td>
                 <td style="text-align:center;">
-                    {{ isset($first->total_teachers) ? '/'.$first->total_teachers : '1' }}
+                    {{ $rateVal }}/{{ $firstTeachers }}
                 </td>
             </tr>
             @foreach($rows->skip(1) as $row)
-                @php $person = $row->teacher ?? $row->employee; @endphp
+                @php
+                    $person = $row->teacher ?? $row->employee;
+                    $rowTeachers = (int)($row->total_teachers ?? $rowspan);
+                @endphp
                 <tr>
                     <td style="text-align:left;">
                         {{ optional(optional($person)->user)->name }},
@@ -1646,7 +1680,7 @@
                         {{ $person?->university?->short_name ?? 'DUET' }}, {{ $person?->university?->city ?? 'Gazipur' }}
                     </td>
                     <td style="text-align:center;">
-                        {{ isset($row->total_teachers) ? '/'.$row->total_teachers : '1' }}
+                        {{ $rateVal }}/{{ $rowTeachers }}
                     </td>
                 </tr>
             @endforeach

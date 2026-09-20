@@ -161,7 +161,10 @@
 
 
         {{-- order-17--}}
-        @include('committee_input.patritals.regular.list_course_profile')
+        @if(!($session_info->year == 5 && $session_info->semester == 1))
+            @include('committee_input.patritals.regular.list_course_profile')
+        @endif
+
 
         {{-- order-14--}}
         @include('committee_input.patritals.regular.list_honorarium_coordinator')

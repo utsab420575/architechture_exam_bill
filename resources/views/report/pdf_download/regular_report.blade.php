@@ -1026,28 +1026,36 @@
                           $assign->rateHead->order_no == '9';
                });
             $total_assigns = $assigns_order_9->count();
-            $loopIndex = 0;
 
             $head = $rateHead_order_9->head ?? 'Scrutinizing ( Answre Script--)';
             $default_rate = $rateAmount_order_9->default_rate ?? 0;
+
+            $scriptCounts = $assigns_order_9->map(function ($a) {
+                return (int)($a->total_students > 0 ? $a->total_students : (($a->no_of_items ?? 0) * 2));
+            })->values();
+            $sumParts = $scriptCounts->implode('+');
+            $scriptsText = $scriptCounts->count() > 1 ? "({$sumParts})/2" : (count($scriptCounts) === 1 ? "{$sumParts}/2" : '');
+
+            $total_amount_teacher = $assigns_order_9->sum('total_amount');
+            if ($total_assigns > 0) {
+                $global_sum += $total_amount_teacher;
+            }
         @endphp
 
         @if ($total_assigns > 0)
             @foreach ($assigns_order_9 as $assign)
-                @php
-                    $global_sum += $assign->total_amount ?? 0;
-                @endphp
                 <tr>
-                    @if ($loopIndex == 0)
+                    @if ($loop->first)
                         <td rowspan="{{ $total_assigns }}">9</td>
                         <td class="textstart" colspan="2" rowspan="{{ $total_assigns }}">{{ $head }}</td>
                     @endif
                     <td>{{ $assign->course_code ?? '' }}</td>
-                    <td>{{$assign->total_students}}/{{$assign->total_teachers}}</td>
-                    <td class="textend">{{ isset($default_rate) ? number_format($default_rate, 0) : '' }}</td>
-                    <td class="textend">{{ isset($assign->total_amount) ? number_format($assign->total_amount, 2) : '' }}</td>
+                    @if ($loop->first)
+                        <td class="textcenter" rowspan="{{ $total_assigns }}">{{ $scriptsText }}</td>
+                        <td class="textcenter" rowspan="{{ $total_assigns }}">{{ isset($default_rate) ? number_format($default_rate, 0) : '' }}</td>
+                        <td class="textend" rowspan="{{ $total_assigns }}">{{ number_format((float)$total_amount_teacher, 2) }}</td>
+                    @endif
                 </tr>
-                @php $loopIndex++; @endphp
             @endforeach
         @else
             {{-- Show default row if no assign exists --}}
@@ -1056,8 +1064,7 @@
                 <td class="textstart" colspan="2" rowspan="1">{{ $head }}</td>
                 <td></td>
                 <td></td>
-                {{--<td class="textend">{{ isset($default_rate) ? number_format($default_rate, 2) : '' }}</td>--}}
-                <td class="textend"></td>
+                <td class="textcenter"></td>
                 <td class="textend"></td>
             </tr>
         @endif
@@ -1509,7 +1516,7 @@
                         <td class="textstart" colspan="2" rowspan="{{ $rowspan_17 }}">{{ $head_order_17 }}</td>
                     @endif
                     <td>{{ $assign->course_code ?? '' }}</td>
-                    <td>{{ isset($assign->total_teachers) ? '/'.$assign->total_teachers : '' }}</td>
+                    <td>1/{{ $assign->total_teachers ?? 1 }}</td>
                     <td class="textend">{{ number_format((float)$default_rate_17, 2) }}</td>
                     <td class="textend">{{ number_format((float)($assign->total_amount ?? 0), 2) }}</td>
                 </tr>
@@ -1562,10 +1569,7 @@
         </tr>
         <tr>
             <td style="width: 20%;" class="pt-20">Taka ---<br>Received</td>
-            <td style="width: 20%;" class="pt-20">------------ In words</td>
-            <td style="width: 30%;" class="pt-20">
-                ----------------------------------------------------------------------
-            </td>
+            <td colspan="2" style="width: 50%;" class="pt-20">-----{{ \App\Services\NumberToWordsHelper::toWords($global_sum ?? 0) }}----</td>
             <td style="width: 30%;" class="pt-20" style="text-align: right">-----------approved</td>
         </tr>
         <tr>
@@ -2534,28 +2538,36 @@
                           $assign->rateHead->order_no == '9';
                });
             $total_assigns = $assigns_order_9->count();
-            $loopIndex = 0;
 
             $head = $rateHead_order_9->head ?? 'Scrutinizing ( Answre Script--)';
             $default_rate = $rateAmount_order_9->default_rate ?? 0;
+
+            $scriptCounts = $assigns_order_9->map(function ($a) {
+                return (int)($a->total_students > 0 ? $a->total_students : (($a->no_of_items ?? 0) * 2));
+            })->values();
+            $sumParts = $scriptCounts->implode('+');
+            $scriptsText = $scriptCounts->count() > 1 ? "({$sumParts})/2" : (count($scriptCounts) === 1 ? "{$sumParts}/2" : '');
+
+            $total_amount_teacher = $assigns_order_9->sum('total_amount');
+            if ($total_assigns > 0) {
+                $global_sum += $total_amount_teacher;
+            }
         @endphp
 
         @if ($total_assigns > 0)
             @foreach ($assigns_order_9 as $assign)
-                @php
-                    $global_sum += $assign->total_amount ?? 0;
-                @endphp
                 <tr>
-                    @if ($loopIndex == 0)
+                    @if ($loop->first)
                         <td rowspan="{{ $total_assigns }}">9</td>
                         <td class="textstart" colspan="2" rowspan="{{ $total_assigns }}">{{ $head }}</td>
                     @endif
                     <td>{{ $assign->course_code ?? '' }}</td>
-                    <td>{{$assign->total_students}}/{{$assign->total_teachers}}</td>
-                    <td class="textend">{{ isset($default_rate) ? number_format($default_rate, 0) : '' }}</td>
-                    <td class="textend">{{ isset($assign->total_amount) ? number_format($assign->total_amount, 2) : '' }}</td>
+                    @if ($loop->first)
+                        <td class="textcenter" rowspan="{{ $total_assigns }}">{{ $scriptsText }}</td>
+                        <td class="textcenter" rowspan="{{ $total_assigns }}">{{ isset($default_rate) ? number_format($default_rate, 0) : '' }}</td>
+                        <td class="textend" rowspan="{{ $total_assigns }}">{{ number_format((float)$total_amount_teacher, 2) }}</td>
+                    @endif
                 </tr>
-                @php $loopIndex++; @endphp
             @endforeach
         @else
             {{-- Show default row if no assign exists --}}
@@ -2564,8 +2576,7 @@
                 <td class="textstart" colspan="2" rowspan="1">{{ $head }}</td>
                 <td></td>
                 <td></td>
-                {{--<td class="textend">{{ isset($default_rate) ? number_format($default_rate, 2) : '' }}</td>--}}
-                <td class="textend"></td>
+                <td class="textcenter"></td>
                 <td class="textend"></td>
             </tr>
         @endif
@@ -2968,7 +2979,7 @@
                         <td class="textstart" colspan="2" rowspan="{{ $rowspan_17 }}">{{ $head_order_17 }}</td>
                     @endif
                     <td>{{ $assign->course_code ?? '' }}</td>
-                    <td>{{ isset($assign->total_teachers) ? '/'.$assign->total_teachers : '' }}</td>
+                    <td>1/{{ $assign->total_teachers ?? 1 }}</td>
                     <td class="textend">{{ number_format((float)$default_rate_17, 2) }}</td>
                     <td class="textend">{{ number_format((float)($assign->total_amount ?? 0), 2) }}</td>
                 </tr>
@@ -3021,10 +3032,7 @@
         </tr>
         <tr>
             <td style="width: 20%;" class="pt-20">Taka ---<br>Received</td>
-            <td style="width: 20%;" class="pt-20">------------ In words</td>
-            <td style="width: 30%;" class="pt-20">
-                ----------------------------------------------------------------------
-            </td>
+            <td colspan="2" style="width: 50%;" class="pt-20">-----{{ \App\Services\NumberToWordsHelper::toWords($global_sum ?? 0) }}----</td>
             <td style="width: 30%;" class="pt-20" style="text-align: right">-----------approved</td>
         </tr>
         <tr>
