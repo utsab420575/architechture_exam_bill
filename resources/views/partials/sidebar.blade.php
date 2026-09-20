@@ -104,6 +104,34 @@
                     </li>
                     @endif--}}
 
+                    {{-- Held On Entry --}}
+                    <li class="nav-parent {{ request()->routeIs('held.on.*') ? 'nav-expanded nav-active' : '' }}">
+                        <a class="nav-link" href="#">
+                            <i class="fa-regular fa-calendar-days" aria-hidden="true"></i>
+                            <span>Held On Entry</span>
+                        </a>
+                        <ul class="nav nav-children">
+                            <li>
+                                <a class="nav-link {{ request()->routeIs('held.on.regular.session') ? 'text-primary' : '' }}"
+                                    href="{{ route('held.on.regular.session') }}">
+                                    All Regular Session
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link {{ request()->routeIs('held.on.review.session') ? 'text-primary' : '' }}"
+                                    href="{{ route('held.on.review.session') }}">
+                                    All Review Session
+                                </a>
+                            </li>
+                            <li>
+                                <a class="nav-link {{ request()->routeIs('held.on.special.session') ? 'text-primary' : '' }}"
+                                    href="{{ route('held.on.special.session') }}">
+                                    All Special Session
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     @if(Auth::user()->can('statement.menu'))
                         <li class="nav-parent {{ request()->routeIs('statement.*') ? 'nav-expanded nav-active' : '' }}">
                             <a class="nav-link" href="#">

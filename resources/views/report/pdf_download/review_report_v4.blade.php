@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -123,7 +123,7 @@
                 {{ $session_info->session }}
             </td>
             <td style="text-align: left;">
-                (Held on: _____________)
+                (Held on: {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('d M Y') : '____________' }})
             </td>
         </tr>
 
@@ -1019,7 +1019,7 @@
                 {{ $session_info->session }}
             </td>
             <td style="text-align: left;">
-                (Held on: _____________)
+                (Held on: {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('d M Y') : '____________' }})
             </td>
         </tr>
 
@@ -1828,3 +1828,4 @@
 
 </body>
 </html>
+

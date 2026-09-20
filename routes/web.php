@@ -21,6 +21,7 @@ use App\Http\Controllers\StatementReviewController;
 use App\Http\Controllers\StatementSpecialController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\HeldOnController;
 use App\Models\Employee;
 use App\Models\Teacher;
 use Illuminate\Support\Facades\Auth;
@@ -194,6 +195,13 @@ Route::middleware('auth')->group(function () {
     });
 
 
+    // Held On Date Entry
+    Route::prefix('held-on')->controller(HeldOnController::class)->group(function () {
+        Route::get('/regular/session', 'regularSession')->name('held.on.regular.session');
+        Route::get('/review/session', 'reviewSession')->name('held.on.review.session');
+        Route::get('/special/session', 'specialSession')->name('held.on.special.session');
+        Route::post('/store', 'store')->name('held.on.store');
+    });
 
 
 

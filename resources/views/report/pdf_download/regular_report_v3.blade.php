@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -134,7 +134,7 @@
                 {{ $session_info->session }}
             </td>
             <td style="text-align: left;">
-                (Held on: _____________)
+                (Held on: {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('d M Y') : '____________' }})
             </td>
         </tr>
 
@@ -1346,7 +1346,7 @@
 
 
 
-{{-- ✅ For Employee, Admin, SuperAdmin --}}
+{{-- âœ… For Employee, Admin, SuperAdmin --}}
 @php
     if ($user->hasRole('Employee') || $user->hasRole('Admin') || $user->hasRole('SuperAdmin')) {
 @endphp
@@ -1410,7 +1410,7 @@
                 {{ $session_info->session }}
             </td>
             <td style="text-align: left;">
-                (Held on: _____________)
+                (Held on: {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('d M Y') : '____________' }})
             </td>
         </tr>
 
@@ -2540,3 +2540,4 @@
 @php } @endphp
 </body>
 </html>
+
