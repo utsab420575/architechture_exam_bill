@@ -767,10 +767,10 @@ class CommitteeInputController extends Controller
             }
 
             DB::commit();
-            Log::info('✅ Class Test & Assignment Data Stored Successfully.', [
+            Log::info('✅ Class Test Data Stored Successfully.', [
                 'session_id' => $session_info->id,
                 'rate_head_id_4' => $rateHead->id,
-                'rate_head_id_4_b' => $rateHead_4_b->id,
+                // 'rate_head_id_4_b' => $rateHead_4_b->id, // Order 4.b commented out
             ]);
 
             return response()->json([
