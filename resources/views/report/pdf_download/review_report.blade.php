@@ -148,7 +148,7 @@
                 {{ $session_info->session }}
             </td>
             <td style="text-align: left;">
-                (Held on: {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('d M Y') : '____________' }})
+                ( Held on {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('F,Y') : '____________' }} )
             </td>
         </tr>
 
@@ -1372,8 +1372,7 @@
         </tr>
         <tr>
             <td style="width: 20%;" class="pt-20">Taka ---<br>Received</td>
-            <td style="width: 20%;" class="pt-20">------------ In words</td>
-            <td style="width: 30%;" class="pt-20">----------------------------------------------------------------------</td>
+            <td colspan="2" style="width: 50%;" class="pt-20">-----{{ \App\Services\NumberToWordsHelper::toWords($global_sum ?? 0) }}----</td>
             <td style="width: 30%;" class="pt-20" style="text-align: right">-----------approved</td>
         </tr>
         <tr>
@@ -1481,7 +1480,7 @@
                 {{ $session_info->session }}
             </td>
             <td style="text-align: left;">
-                (Held on: {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('d M Y') : '____________' }})
+                ( Held on {{ $session_info->held_on ? \Carbon\Carbon::parse($session_info->held_on)->format('F,Y') : '____________' }} )
             </td>
         </tr>
 
@@ -2673,8 +2672,7 @@
         </tr>
         <tr>
             <td style="width: 20%;" class="pt-20">Taka ---<br>Received</td>
-            <td style="width: 20%;" class="pt-20">------------ In words</td>
-            <td style="width: 30%;" class="pt-20">----------------------------------------------------------------------</td>
+            <td colspan="2" style="width: 50%;" class="pt-20">-----{{ \App\Services\NumberToWordsHelper::toWords($global_sum ?? 0) }}----</td>
             <td style="width: 30%;" class="pt-20" style="text-align: right">-----------approved</td>
         </tr>
         <tr>
