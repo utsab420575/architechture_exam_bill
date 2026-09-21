@@ -290,6 +290,18 @@ class StatementReviewController extends Controller
             ->when($rateHead_order_8_c, fn($q) => $q->where('rate_head_id', $rateHead_order_8_c->id))
             ->get();
 
+        //order 8.e
+        $rateHead_order_8_e = RateHead::where('order_no', '8.e')->first();
+
+        $assigns_order_8_e = RateAssign::with([
+            'teacher.user','teacher.designation','teacher.department',
+            'employee.user','employee.designation','employee.department','rateHead'
+        ])
+            ->where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->when($rateHead_order_8_e, fn($q) => $q->where('rate_head_id', $rateHead_order_8_e->id))
+            ->get();
+
 
         // order 12.a
         $rateHead_order_12_a = RateHead::where('order_no', '12.a')->first();
@@ -486,6 +498,7 @@ class StatementReviewController extends Controller
             'assigns_order_10_b'=> $assigns_order_10_b,
             'assigns_order_8_d' => $assigns_order_8_d,
             'assigns_order_8_c' => $assigns_order_8_c,
+            'assigns_order_8_e' => $assigns_order_8_e,
 
             'assigns_order_12_a'=> $assigns_order_12_a,
             'assigns_order_12_b'=> $assigns_order_12_b,

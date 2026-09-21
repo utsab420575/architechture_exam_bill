@@ -297,6 +297,9 @@ class CommitteeInputReviewController extends Controller
         //active head
         $teacher_head = ApiData::getHead();
 
+        //total student
+        $totalStudentInSession = ApiData::getTotalStudentInSession($sid);
+
         // return response()->json(['$all_course_with_teacher'=>$all_course_with_teacher]);
         // Preload rate amounts and existing assignments via service
         $preloadedData = ReviewSessionFormDataService::getPreloadedFormData($session_info, $exam_type->id);
@@ -308,6 +311,7 @@ class CommitteeInputReviewController extends Controller
             'teachers' => $teachers,
             'employees' => $employees,
             'teacher_head' => $teacher_head,
+            'totalStudentInSession' => $totalStudentInSession,
             'groupedTeachers' => $groupedTeachers,
             'all_course_with_teacher' => $all_course_with_teacher,
             'number_of_theory_courses' => $number_of_theory_courses,
@@ -1345,6 +1349,410 @@ class CommitteeInputReviewController extends Controller
 
             return response()->json([
                 'message' => 'Error occurred while saving data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //order=8.d
+    public function storePreparedComputerizedResult(Request $request)
+    {
+        $teacherData = $request->input('prepared_computerized_result_teacher_ids', []);
+        $studentData = $request->input('prepared_computerized_result_no_of_students', []);
+        $sessionId = $request->sid;
+        $prepare_computerized_result_rate = $request->input('prepare_computerized_result_rate');
+        $exam_type_record = ExamType::where('type', 'review')->first();
+        $exam_type = $exam_type_record->id;
+
+        Log::info('📥 Received Prepared Computerized Result Data (Review)', [
+            'session_id' => $sessionId,
+            'teacher_data' => $teacherData,
+            'student_data' => $studentData,
+            'rate' => $prepare_computerized_result_rate
+        ]);
+
+        $errors = [];
+
+        // Step 1: Validate teacher and student input
+        if (empty($teacherData)) {
+            $errors['prepared_computerized_result_teacher_ids'] = 'You must select at least one teacher.';
+        }
+
+        if (empty($studentData)) {
+            $errors['prepared_computerized_result_no_of_students'] = 'You must provide the number of students.';
+        }
+
+        foreach ($teacherData as $courseId => $teacherIds) {
+            if (empty($teacherIds)) {
+                $errors["teacher_ids.$courseId"] = "Select at least one teacher for course ID $courseId.";
+            }
+
+            $studentCount = $studentData[$courseId] ?? null;
+            if ($studentCount === null || $studentCount === '' || !is_numeric($studentCount) || $studentCount < 0) {
+                $errors["no_of_students.$courseId"] = "Enter a valid number of students for course ID $courseId.";
+            }
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $errors
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Step 2: Create or fetch RateHead
+            $rateHead = $this->getOrCreateRateHead('8.d', [
+                'head' => 'Prepared Computerized Result',
+                'dist_type' => 'Share',
+                'enable_min' => 0,
+                'enable_max' => 0,
+                'is_course' => 1,
+                'is_student_count' => 1,
+                'marge_with' => null,
+                'status' => 1,
+            ]);
+
+            Log::info('✅ RateHead confirmed', $rateHead->toArray());
+
+            // Step 3: Get or create review session
+            $session_info = LocalData::getOrCreateReviewSession($sessionId, $exam_type);
+
+            // Step 4: Create or fetch RateAmount
+            $rateAmount = $this->getOrCreateRateAmount(
+                $rateHead->id,
+                $session_info->id,
+                $exam_type,
+                [
+                    'default_rate' => $prepare_computerized_result_rate,
+                    'min_rate'     => null,
+                    'max_rate'     => null,
+                ]
+            );
+
+            // Delete old entries (rateAssign)
+            RateAssign::where('session_id', $session_info->id)
+                ->where('exam_type_id', $exam_type)
+                ->where('rate_head_id', $rateHead->id)
+                ->delete();
+
+            // Step 5: Assign to teachers
+            foreach ($teacherData as $courseId => $teacherIds) {
+                $studentCount = (int) $studentData[$courseId];
+                $teacherCount = count($teacherIds);
+
+                if ($teacherCount > 0 && $studentCount >= 0) {
+                    $studentsPerTeacher = $studentCount / $teacherCount;
+
+                    foreach ($teacherIds as $teacherId) {
+                        $calculatedAmount = $studentsPerTeacher * $rateAmount->default_rate;
+
+                        Log::info('📘 Prepared Computerized Result Store (Review)', [
+                            'teacher_id'   => $teacherId,
+                            'rate_head_id' => $rateHead->id,
+                            'session_id'   => $session_info->id,
+                            'no_of_items'  => $studentsPerTeacher,
+                            'total_amount' => $calculatedAmount,
+                            'course_code'    => $request->input("courseno.$courseId"),
+                            'course_name'    => $request->input("coursetitle.$courseId"),
+                            'total_students' => $studentCount,
+                            'total_teachers'  => $teacherCount,
+                            'exam_type_id' => $exam_type
+                        ]);
+
+                        $rateAssign = new RateAssign();
+                        $rateAssign->teacher_id = $teacherId;
+                        $rateAssign->rate_head_id = $rateHead->id;
+                        $rateAssign->session_id = $session_info->id;
+                        $rateAssign->no_of_items = $studentsPerTeacher;
+                        $rateAssign->total_amount = $calculatedAmount;
+
+                        // Add hidden course-related data
+                        $rateAssign->course_code = $request->input("courseno.$courseId");
+                        $rateAssign->course_name = $request->input("coursetitle.$courseId");
+                        $rateAssign->total_students = $studentCount;
+                        $rateAssign->total_teachers = $teacherCount;
+                        $rateAssign->exam_type_id = $exam_type;
+                        $rateAssign->save();
+                    }
+                }
+            }
+
+            DB::commit();
+
+            Log::info('✅ Prepared Computerized Result Assignments saved (Review).', [
+                'rate_head_id' => $rateHead->id,
+                'session_id' => $session_info->id,
+            ]);
+
+            return response()->json([
+                'message' => 'Prepared Computerized Result saved successfully.',
+                'teacher_ids' => $teacherData,
+                'student_counts' => $studentData,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Error saving Prepared Computerized Result (Review): ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'An error occurred while saving data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //order=8.c
+    public function storeVerifiedComputerizedGradeSheet(Request $request)
+    {
+        $teacherIds = $request->input('verified_computerized_result_teachers', []);
+        $totalStudents = (int) $request->input('verified_computerized_result_total_students');
+        $sessionId = $request->sid;
+        $verified_computerized_grade_sheet_rate = $request->verified_computerized_grade_sheet_rate;
+        $exam_type_record = ExamType::where('type', 'review')->first();
+        $exam_type = $exam_type_record->id;
+
+        Log::info('📥 Received Verified Computerized Result Data (Review)', [
+            'session_id' => $sessionId,
+            'teacher_ids' => $teacherIds,
+            'total_students' => $totalStudents,
+            'rate' => $verified_computerized_grade_sheet_rate
+        ]);
+
+        $errors = [];
+
+        // Validation
+        if (empty($teacherIds)) {
+            $errors['verified_computerized_result_teachers'] = 'Select at least one teacher.';
+        }
+
+        if (!$totalStudents || $totalStudents < 1) {
+            $errors['verified_computerized_result_total_students'] = 'Enter a valid number of students.';
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $errors
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Step 1: RateHead
+            $rateHead = $this->getOrCreateRateHead('8.c', [
+                'head' => 'Grade Sheeets/GPA Verification',
+                'dist_type' => 'Share',
+                'enable_min' => 0,
+                'enable_max' => 0,
+                'is_course' => 0,
+                'is_student_count' => 1,
+                'marge_with' => null,
+                'status' => 1,
+            ]);
+
+            Log::info('✅ RateHead created or updated (Review).', $rateHead->toArray());
+
+            // Step 2: Get or create review session
+            $session_info = LocalData::getOrCreateReviewSession($sessionId, $exam_type);
+
+            // Step 3: RateAmount
+            $rateAmount = $this->getOrCreateRateAmount(
+                $rateHead->id,
+                $session_info->id,
+                $exam_type,
+                [
+                    'default_rate' => $verified_computerized_grade_sheet_rate,
+                    'min_rate'     => null,
+                    'max_rate'     => null,
+                ]
+            );
+
+            // RateAssign: Delete old entries
+            RateAssign::where('session_id', $session_info->id)
+                ->where('exam_type_id', $exam_type)
+                ->where('rate_head_id', $rateHead->id)
+                ->delete();
+
+            // Step 4: Assign to teachers
+            $total_teacher = count($teacherIds);
+            $studentsPerTeacher = $total_teacher > 0 ? ($totalStudents / $total_teacher) : 0;
+
+            foreach ($teacherIds as $teacherId) {
+                $calculatedAmount = $studentsPerTeacher * $rateAmount->default_rate;
+
+                Log::info('📘 Verified Computerized Result Store (Review)', [
+                    'teacher_id'   => $teacherId,
+                    'rate_head_id' => $rateHead->id,
+                    'session_id'   => $session_info->id,
+                    'no_of_items'  => $studentsPerTeacher,
+                    'total_amount' => $calculatedAmount,
+                    'total_students' => $totalStudents,
+                    'total_teachers'  => $total_teacher,
+                    'exam_type_id' => $exam_type
+                ]);
+                $rateAssign = new RateAssign();
+                $rateAssign->teacher_id = $teacherId;
+                $rateAssign->rate_head_id = $rateHead->id;
+                $rateAssign->session_id = $session_info->id;
+                $rateAssign->no_of_items = $studentsPerTeacher;
+                $rateAssign->total_amount = $calculatedAmount;
+                $rateAssign->exam_type_id = $exam_type;
+                $rateAssign->total_students = $totalStudents;
+                $rateAssign->total_teachers = $total_teacher;
+                $rateAssign->save();
+            }
+
+            DB::commit();
+
+            Log::info('✅ Verified Computerized Result Assignments saved (Review).', [
+                'rate_head_id' => $rateHead->id,
+                'session_id' => $session_info->id,
+            ]);
+
+            return response()->json([
+                'message' => 'Verified Computerized Result saved successfully.',
+                'teacher_ids' => $teacherIds,
+                'total_students' => $totalStudents
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Error saving Verified Computerized Result (Review): ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'An error occurred while saving data.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    //order=8.e
+    public function storeTabulation(Request $request)
+    {
+        $teacherIds = $request->input('tabulation_teachers', []);
+        $totalStudents = (float) $request->input('tabulation_total_students', 0);
+        $sessionId = $request->sid;
+        $tabulation_rate = $request->tabulation_rate ?? 90;
+        $exam_type_record = ExamType::where('type', 'review')->first();
+        $exam_type = $exam_type_record->id;
+
+        Log::info('📥 Received Tabulation Data (Review)', [
+            'session_id' => $sessionId,
+            'teacher_ids' => $teacherIds,
+            'total_students' => $totalStudents,
+            'rate' => $tabulation_rate
+        ]);
+
+        $errors = [];
+
+        // Validation
+        if (empty($teacherIds)) {
+            $errors['tabulation_teachers'] = 'Select at least one teacher.';
+        }
+
+        if ($totalStudents === null || $totalStudents === '' || !is_numeric($totalStudents) || $totalStudents < 0) {
+            $errors['tabulation_total_students'] = 'Enter a valid number of students.';
+        }
+
+        if (!empty($errors)) {
+            return response()->json([
+                'message' => 'Validation failed.',
+                'errors' => $errors
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Step 1: RateHead (8.e)
+            $rateHead = RateHead::where('order_no', '8.e')->first();
+            if (!$rateHead) {
+                $rateHead = $this->getOrCreateRateHead('8.e', [
+                    'head' => 'Tabulation',
+                    'sub_head' => null,
+                    'dist_type' => 'share',
+                    'enable_min' => 0,
+                    'enable_max' => 0,
+                    'is_course' => 0,
+                    'is_student_count' => 0,
+                    'marge_with' => null,
+                    'status' => 1,
+                ]);
+            }
+
+            Log::info('✅ RateHead for 8.e confirmed (Review).', $rateHead->toArray());
+
+            // Step 2: Get or create review session
+            $session_info = LocalData::getOrCreateReviewSession($sessionId, $exam_type);
+
+            // Step 3: RateAmount
+            $rateAmount = $this->getOrCreateRateAmount(
+                $rateHead->id,
+                $session_info->id,
+                $exam_type,
+                [
+                    'default_rate' => $tabulation_rate,
+                    'min_rate'     => null,
+                    'max_rate'     => null,
+                ]
+            );
+
+            // RateAssign: Delete old entries
+            RateAssign::where('session_id', $session_info->id)
+                ->where('exam_type_id', $exam_type)
+                ->where('rate_head_id', $rateHead->id)
+                ->delete();
+
+            // Step 4: Assign to teachers
+            $total_teacher = count($teacherIds);
+            $studentsPerTeacher = $total_teacher > 0 ? ($totalStudents / $total_teacher) : 0;
+
+            foreach ($teacherIds as $teacherId) {
+                $calculatedAmount = $studentsPerTeacher * $rateAmount->default_rate;
+
+                Log::info('📘 Tabulation RateAssign Store (Review)', [
+                    'teacher_id'   => $teacherId,
+                    'rate_head_id' => $rateHead->id,
+                    'session_id'   => $session_info->id,
+                    'no_of_items'  => $studentsPerTeacher,
+                    'total_amount' => $calculatedAmount,
+                    'total_students' => $totalStudents,
+                    'total_teachers' => $total_teacher,
+                    'exam_type_id' => $exam_type
+                ]);
+
+                $rateAssign = new RateAssign();
+                $rateAssign->teacher_id = $teacherId;
+                $rateAssign->rate_head_id = $rateHead->id;
+                $rateAssign->session_id = $session_info->id;
+                $rateAssign->no_of_items = $studentsPerTeacher;
+                $rateAssign->total_amount = $calculatedAmount;
+                $rateAssign->exam_type_id = $exam_type;
+                $rateAssign->total_students = $totalStudents;
+                $rateAssign->total_teachers = $total_teacher;
+                $rateAssign->save();
+            }
+
+            DB::commit();
+
+            Log::info('✅ Tabulation Assignments saved (Review).', [
+                'rate_head_id' => $rateHead->id,
+                'session_id' => $session_info->id,
+            ]);
+
+            return response()->json([
+                'message' => 'Tabulation committee saved successfully.',
+                'teacher_ids' => $teacherIds,
+                'total_students' => $totalStudents
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('❌ Error saving Tabulation (Review): ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'An error occurred while saving data.',
                 'error' => $e->getMessage(),
             ], 500);
         }

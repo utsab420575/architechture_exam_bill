@@ -131,6 +131,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/review/list/scrutinizers/store', 'storeScrutinizers')->name('committee.input.review.scrutinizers.store');
         Route::post('/review/theory/grade/sheet/store', 'storeReviewTheoryGradeSheet')->name('committee.input.review.theory.grade.sheet.store');
         Route::post('/review/scrutinizers/theory/grade/sheet/store',  'storeReviewScrutinizersTheoryGradeSheet')->name('committee.input.review.scrutinizers.theory.grade.sheet.store');
+        Route::post('/review/prepare/computerized/result/store', 'storePreparedComputerizedResult')->name('committee.input.review.prepare.computerized.result.store');
+        Route::post('/review/verified/computerized/grade/sheet/store', 'storeVerifiedComputerizedGradeSheet')->name('committee.input.review.verified.computerized.grade.sheet.store');
+        Route::post('/review/tabulation/store', 'storeTabulation')->name('committee.input.review.tabulation.store');
 
         Route::post('/review/stencil/cutting/committee/store', 'storeStencilCuttingCommittee')->name('committee.input.review.stencil.cutting.committee.store');
         Route::post('/review/printing/question/committee/store', 'storePrintingQuestion')->name('committee.input.review.printing.question.committee.store');

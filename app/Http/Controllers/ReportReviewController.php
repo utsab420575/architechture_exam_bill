@@ -223,12 +223,40 @@ class ReportReviewController extends Controller
 
         //Order 8.c
         $rateHead_order_8c = RateHead::where('order_no', '8.c')->first();
+        $rateAmount_order_8c = RateAmount::where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->whereHas('rateHead', function ($query) {
+                $query->where('order_no', '8.c');
+            })
+            ->with('rateHead')
+            ->first();
         Log::info('📦 rateHead_order_8c', optional($rateHead_order_8c)->toArray() ?? []);
+        Log::info('📦 rateAmount_order_8c', optional($rateAmount_order_8c)->toArray() ?? []);
 
 
         //Order 8.d
         $rateHead_order_8d = RateHead::where('order_no', '8.d')->first();
+        $rateAmount_order_8d = RateAmount::where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->whereHas('rateHead', function ($query) {
+                $query->where('order_no', '8.d');
+            })
+            ->with('rateHead')
+            ->first();
         Log::info('📦rateHead_order_8d', optional($rateHead_order_8d)->toArray() ?? []);
+        Log::info('📦rateAmount_order_8d', optional($rateAmount_order_8d)->toArray() ?? []);
+
+        //Order 8.e
+        $rateHead_order_8e = RateHead::where('order_no', '8.e')->first();
+        $rateAmount_order_8e = RateAmount::where('session_id', $session_info->id)
+            ->where('exam_type_id', $exam_type)
+            ->whereHas('rateHead', function ($query) {
+                $query->where('order_no', '8.e');
+            })
+            ->with('rateHead')
+            ->first();
+        Log::info('📦 rateHead_order_8e', optional($rateHead_order_8e)->toArray() ?? []);
+        Log::info('📦 rateAmount_order_8e', optional($rateAmount_order_8e)->toArray() ?? []);
 
 
         //Order 9
@@ -373,8 +401,11 @@ class ReportReviewController extends Controller
             'rateHead_order_8b' => $rateHead_order_8b,
 
             'rateHead_order_8c' => $rateHead_order_8c,
-
+            'rateAmount_order_8c' => $rateAmount_order_8c,
             'rateHead_order_8d' => $rateHead_order_8d,
+            'rateAmount_order_8d' => $rateAmount_order_8d,
+            'rateHead_order_8e' => $rateHead_order_8e,
+            'rateAmount_order_8e' => $rateAmount_order_8e,
 
 
             'rateHead_order_9' => $rateHead_order_9,

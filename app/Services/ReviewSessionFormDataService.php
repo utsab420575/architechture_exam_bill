@@ -39,12 +39,19 @@ class ReviewSessionFormDataService
 
         $honorium_chairman = null;
 
+        $prepared_computerized_per_student_per_subject_rate = null;
+        $verified_computerized_per_student_per_subject_rate = null;
+        $tabulation_per_student_rate = null;
+
         $savedModerationAssigns = collect();
         $savedRateAssignPaperSetter = collect();
         $savedRateAssignExaminer = collect();
         $savedRateAssignScrutinizers = collect();
         $savedRateAssignTheoryGradeSheet = collect();
         $savedRateAssignScrutinizersTheoryGradeSheet = collect();
+        $savedRateAssignPreparedComputerizedResult = collect();
+        $savedRateAssignVerifiedComputerizedGradeSheet = collect();
+        $savedRateAssignTabulation = collect();
         $savedRateAssignStencilCuttingCommittee = collect();
         $savedRateAssignPrintingQuestion = collect();
         $savedRateAssignComparisonCommittee = collect();
@@ -155,6 +162,54 @@ class ReviewSessionFormDataService
                 $scrunizing_theory_grade_sheet_per_subject_rate = $preparatonSessionalGradeSheetData?->default_rate;
             }
 
+            // For PreparedComputerizedResult (8.d)
+            $ratePreparedComputerizedResult = RateHead::where('order_no', '=', '8.d')->first();
+            if ($ratePreparedComputerizedResult) {
+                $savedRateAssignPreparedComputerizedResult = RateAssign::getTeacherWithCourse(
+                    $session_info->id,
+                    $exam_type,
+                    $ratePreparedComputerizedResult->id
+                );
+
+                $PreparedComputerizedResultData = RateAmount::where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $ratePreparedComputerizedResult->id)
+                    ->where('session_id', $session_info->id)
+                    ->first();
+                $prepared_computerized_per_student_per_subject_rate = $PreparedComputerizedResultData?->default_rate;
+            }
+
+            // For VerifiedComputerizedGradeSheet (8.c)
+            $rateVerifiedComputerizedGradeSheet = RateHead::where('order_no', '=', '8.c')->first();
+            if ($rateVerifiedComputerizedGradeSheet) {
+                $savedRateAssignVerifiedComputerizedGradeSheet = RateAssign::getTeachersFromCommittee(
+                    $session_info->id,
+                    $exam_type,
+                    $rateVerifiedComputerizedGradeSheet->id
+                );
+
+                $VerifiedComputerizedGradeSheetData = RateAmount::where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $rateVerifiedComputerizedGradeSheet->id)
+                    ->where('session_id', $session_info->id)
+                    ->first();
+                $verified_computerized_per_student_per_subject_rate = $VerifiedComputerizedGradeSheetData?->default_rate;
+            }
+
+            // For Tabulation (8.e)
+            $rateTabulation = RateHead::where('order_no', '=', '8.e')->first();
+            if ($rateTabulation) {
+                $savedRateAssignTabulation = RateAssign::getTeachersFromCommittee(
+                    $session_info->id,
+                    $exam_type,
+                    $rateTabulation->id
+                );
+
+                $TabulationData = RateAmount::where('exam_type_id', $exam_type)
+                    ->where('rate_head_id', $rateTabulation->id)
+                    ->where('session_id', $session_info->id)
+                    ->first();
+                $tabulation_per_student_rate = $TabulationData?->default_rate;
+            }
+
             // For StencilCuttingCommittee
             $rateStencilCuttingCommittee = RateHead::where('order_no', '=', '12.a')->first();
             if ($rateStencilCuttingCommittee) {
@@ -231,6 +286,9 @@ class ReviewSessionFormDataService
             'scrutinizer_min_rate',
             'theory_grade_sheet_per_subject_rate',
             'scrunizing_theory_grade_sheet_per_subject_rate',
+            'prepared_computerized_per_student_per_subject_rate',
+            'verified_computerized_per_student_per_subject_rate',
+            'tabulation_per_student_rate',
             'stencill_cutting_per_stencil_rate',
             'print_question_paper_rate',
             'comparison_rate',
@@ -241,6 +299,9 @@ class ReviewSessionFormDataService
             'savedRateAssignScrutinizers',
             'savedRateAssignTheoryGradeSheet',
             'savedRateAssignScrutinizersTheoryGradeSheet',
+            'savedRateAssignPreparedComputerizedResult',
+            'savedRateAssignVerifiedComputerizedGradeSheet',
+            'savedRateAssignTabulation',
             'savedRateAssignStencilCuttingCommittee',
             'savedRateAssignPrintingQuestion',
             'savedRateAssignComparisonCommittee',

@@ -708,19 +708,18 @@
                           $assign->rateHead->order_no == '8.c';
                })->first();
 
-
-            /*$assigns_order_8d = $teacher->rateAssigns->filter(function($assign) use ($session_info) {
+             $assigns_order_8e = $teacher->rateAssigns->filter(function($assign) use ($session_info) {
                    return $assign->session_id == $session_info->id &&
-            $assign->exam_type_id == 2 &&
-            $assign->rateHead &&
-                          $assign->rateHead->order_no == '8.d';
-               })->first();*/
+                          $assign->exam_type_id == 2 &&
+                          $assign->rateHead &&
+                          $assign->rateHead->order_no == '8.e';
+               })->first();
 
             $total_assigns_8a = $assigns_order_8a->count();
             $total_assigns_8b = $assigns_order_8b->count();
 
-            // Total number of rows for section 8 (8.a + 8.b + 8.c + 8.d)
-            $rowspan_8_block = max(1, $total_assigns_8a) + max(1, $total_assigns_8b) + 1 + 1;
+            // Total number of rows for section 8 (8.a + 8.b + 8.c + 8.d + 8.e)
+            $rowspan_8_block = max(1, $total_assigns_8a) + max(1, $total_assigns_8b) + 1 + 1 + 1;
 
             $head_8a = $rateHead_order_8a->head ?? 'Gradesheet Preparation--';
             $sub_head_8a = $rateHead_order_8a->sub_head ?? 'Theoretical*';
@@ -730,13 +729,14 @@
             $sub_head_8b = $rateHead_order_8b->sub_head ?? 'Sessional*';
             $rateAmount_8b_default_rate = $rateAmount_order_8b->default_rate ?? '';
 
-
-
             $head_8c = $rateHead_order_8c->head ?? 'Empty';
             $rateAmount_8c_default_rate = $rateAmount_order_8c->default_rate ?? '';
 
             $head_8d = $rateHead_order_8d->head ?? 'Empty';
             $rateAmount_8d_default_rate = $rateAmount_order_8d->default_rate ?? '';
+
+            $head_8e = $rateHead_order_8e->head ?? 'Tabulation';
+            $rateAmount_8e_default_rate = $rateAmount_order_8e->default_rate ?? 90;
         @endphp
 
         {{-- 8.a rows --}}
@@ -832,6 +832,17 @@
                        $assign->rateHead->order_no == '8.d';
             });
 
+            // just the course_code values (unique, trimmed)
+            $course_codes = $assign_8_d
+                ->pluck('course_code')
+                ->filter(fn($c) => filled($c))
+                ->map(fn($c) => trim($c))
+                ->unique()
+                ->values()
+                ->all();
+            // collect "s/t" per course for THIS teacher
+            $fraction_parts = [];
+
             $total_assigns = $assign_8_d->count();
 
             $rateHead=\App\Models\RateHead::where('order_no','8.d')->first();
@@ -850,13 +861,27 @@
                    /* $total_student_all_course += $assign->total_students ?? 0;*/
                     $total_student_all_course += $assign->no_of_items ?? 0;
                     $total_amount_all_course += $assign->total_amount ?? 0;
+
+                    // build "students/teachers" text from the row (no extra queries)
+                    $s = (int)   ($assign->total_students  ?? 0);
+                    $t = max(1, (int) ($assign->total_teachers ?? 0)); // guard divide-by-zero
+                    $fraction_parts[] = "{$s}/{$t}";
                 @endphp
             @endforeach
+
+            @php
+                $chunks = array_chunk($fraction_parts, 3);
+                $pretty_total = rtrim(rtrim(number_format($total_student_all_course, 2, '.', ''), '0'), '.');
+            @endphp
             <tr>
                 <td class="textstart" colspan="2">{{ $head }}</td>
-                <td>{{ $total_assigns }} courses</td>
+                <td class="textstart">{{ implode(', ', $course_codes) }}</td>
                 {{--<td>{{ $total_student_all_course }}/2</td>--}}
-                <td>{{ $total_student_all_course }}</td>
+                <td class="textcenter">
+                    @foreach ($chunks as $i => $chunk)
+                        {{ implode(' + ', $chunk) }}@if ($i < count($chunks) - 1) +<br>@endif
+                    @endforeach
+                </td>
                 <td class="textend">{{ number_format($default_rate_8_d, 2) }}</td>
                 <td class="textend">{{ number_format($total_amount_all_course, 2) }}</td>
             </tr>
@@ -871,6 +896,29 @@
                 <td class="textend"></td>
             </tr>
         @endif
+
+        {{-- Order = 8.e --}}
+        @php
+            if ($assigns_order_8e && $assigns_order_8e->total_amount) {
+                $global_sum += $assigns_order_8e->total_amount;
+            }
+        @endphp
+        <tr>
+            <td class="textstart" colspan="2">{{ $head_8e }}</td>
+            <td></td>
+            @if($assigns_order_8e)
+                <td>
+                    {{ $assigns_order_8e->total_students ?? '' }}/{{ $assigns_order_8e->total_teachers ?? '' }}
+                </td>
+                <td class="textend">
+                    {{ is_numeric($rateAmount_8e_default_rate) ? number_format((float) $rateAmount_8e_default_rate, 2) : '' }}
+                </td>
+            @else
+                <td></td>
+                <td></td>
+            @endif
+            <td class="textend">{{ isset($assigns_order_8e->total_amount) ? number_format((float)$assigns_order_8e->total_amount, 2) : '' }}</td>
+        </tr>
 
 
 
@@ -2038,19 +2086,18 @@
                           $assign->rateHead->order_no == '8.c';
                })->first();
 
-
-            /*$assigns_order_8d = $employee->rateAssigns->filter(function($assign) use ($session_info) {
+             $assigns_order_8e = $employee->rateAssigns->filter(function($assign) use ($session_info) {
                    return $assign->session_id == $session_info->id &&
-            $assign->exam_type_id == 2 &&
-            $assign->rateHead &&
-                          $assign->rateHead->order_no == '8.d';
-               })->first();*/
+                          $assign->exam_type_id == 2 &&
+                          $assign->rateHead &&
+                          $assign->rateHead->order_no == '8.e';
+               })->first();
 
             $total_assigns_8a = $assigns_order_8a->count();
             $total_assigns_8b = $assigns_order_8b->count();
 
-            // Total number of rows for section 8 (8.a + 8.b + 8.c + 8.d)
-            $rowspan_8_block = max(1, $total_assigns_8a) + max(1, $total_assigns_8b) + 1 + 1;
+            // Total number of rows for section 8 (8.a + 8.b + 8.c + 8.d + 8.e)
+            $rowspan_8_block = max(1, $total_assigns_8a) + max(1, $total_assigns_8b) + 1 + 1 + 1;
 
             $head_8a = $rateHead_order_8a->head ?? 'Gradesheet Preparation--';
             $sub_head_8a = $rateHead_order_8a->sub_head ?? 'Theoretical*';
@@ -2060,13 +2107,14 @@
             $sub_head_8b = $rateHead_order_8b->sub_head ?? 'Sessional*';
             $rateAmount_8b_default_rate = $rateAmount_order_8b->default_rate ?? '';
 
-
-
             $head_8c = $rateHead_order_8c->head ?? 'Empty';
             $rateAmount_8c_default_rate = $rateAmount_order_8c->default_rate ?? '';
 
             $head_8d = $rateHead_order_8d->head ?? 'Empty';
             $rateAmount_8d_default_rate = $rateAmount_order_8d->default_rate ?? '';
+
+            $head_8e = $rateHead_order_8e->head ?? 'Tabulation';
+            $rateAmount_8e_default_rate = $rateAmount_order_8e->default_rate ?? 90;
         @endphp
 
         {{-- 8.a rows --}}
@@ -2162,6 +2210,17 @@
                        $assign->rateHead->order_no == '8.d';
             });
 
+            // just the course_code values (unique, trimmed)
+            $course_codes = $assign_8_d
+                ->pluck('course_code')
+                ->filter(fn($c) => filled($c))
+                ->map(fn($c) => trim($c))
+                ->unique()
+                ->values()
+                ->all();
+            // collect "s/t" per course for THIS teacher
+            $fraction_parts = [];
+
             $total_assigns = $assign_8_d->count();
 
             $rateHead=\App\Models\RateHead::where('order_no','8.d')->first();
@@ -2180,13 +2239,26 @@
                    /* $total_student_all_course += $assign->total_students ?? 0;*/
                     $total_student_all_course += $assign->no_of_items ?? 0;
                     $total_amount_all_course += $assign->total_amount ?? 0;
+
+                    // build "students/teachers" text from the row (no extra queries)
+                    $s = (int)   ($assign->total_students  ?? 0);
+                    $t = max(1, (int) ($assign->total_teachers ?? 0)); // guard divide-by-zero
+                    $fraction_parts[] = "{$s}/{$t}";
                 @endphp
             @endforeach
+            @php
+                $chunks = array_chunk($fraction_parts, 3);
+                $pretty_total = rtrim(rtrim(number_format($total_student_all_course, 2, '.', ''), '0'), '.');
+            @endphp
             <tr>
                 <td class="textstart" colspan="2">{{ $head }}</td>
-                <td>{{ $total_assigns }} courses</td>
+                <td class="textstart">{{ implode(', ', $course_codes) }}</td>
                 {{--<td>{{ $total_student_all_course }}/2</td>--}}
-                <td>{{ $total_student_all_course }}</td>
+                <td class="textcenter">
+                    @foreach ($chunks as $i => $chunk)
+                        {{ implode(' + ', $chunk) }}@if ($i < count($chunks) - 1) +<br>@endif
+                    @endforeach
+                </td>
                 <td class="textend">{{ number_format($default_rate_8_d, 2) }}</td>
                 <td class="textend">{{ number_format($total_amount_all_course, 2) }}</td>
             </tr>
@@ -2201,6 +2273,29 @@
                 <td class="textend"></td>
             </tr>
         @endif
+
+        {{-- Order = 8.e --}}
+        @php
+            if ($assigns_order_8e && $assigns_order_8e->total_amount) {
+                $global_sum += $assigns_order_8e->total_amount;
+            }
+        @endphp
+        <tr>
+            <td class="textstart" colspan="2">{{ $head_8e }}</td>
+            <td></td>
+            @if($assigns_order_8e)
+                <td>
+                    {{ $assigns_order_8e->total_students ?? '' }}/{{ $assigns_order_8e->total_teachers ?? '' }}
+                </td>
+                <td class="textend">
+                    {{ is_numeric($rateAmount_8e_default_rate) ? number_format((float) $rateAmount_8e_default_rate, 2) : '' }}
+                </td>
+            @else
+                <td></td>
+                <td></td>
+            @endif
+            <td class="textend">{{ isset($assigns_order_8e->total_amount) ? number_format((float)$assigns_order_8e->total_amount, 2) : '' }}</td>
+        </tr>
 
 
 

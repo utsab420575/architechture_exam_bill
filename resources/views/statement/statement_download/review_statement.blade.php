@@ -898,7 +898,8 @@
                 $firstPerson  = $first->teacher ?? $first->employee;
 
                 // total students (sum of no_of_items for this teacher)
-                $totalStudents = (int) $rows->sum(function($r){ return (float) $r->no_of_items; });
+                $totalStudents = round((float) $rows->sum(function($r){ return (float) $r->no_of_items; }), 4);
+                $displayTotalStudents = fmod($totalStudents, 1) == 0 ? (int)$totalStudents : rtrim(rtrim(number_format($totalStudents, 2, '.', ''), '0'), '.');
             @endphp
 
             {{-- First row (teacher info + first course) --}}
@@ -916,7 +917,7 @@
                 <td style="text-align:center;">
                     {{ (int)($first->total_students ?? 0) }}/{{ (int)($first->total_teachers ?? $rowspan) }}
                 </td>
-                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $totalStudents }}</td>
+                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $displayTotalStudents }}</td>
             </tr>
 
             {{-- Remaining courses for same teacher --}}
@@ -969,6 +970,45 @@
                     {{ $person?->designation?->designation }},
                     {{ $person?->department?->fullname }},
                     {{ $assign->teacher?->university?->short_name ?? 'DUET' }}, {{ $assign->teacher?->university?->city ?? 'Gazipur' }}
+                </td>
+                <td style="text-align:center;">
+                    {{ $students }}/{{ $teachers }}
+                </td>
+            </tr>
+        @endforeach
+        </tbody>
+    </table>
+@endif
+
+{{-- (order 8.e) --}}
+@if($assigns_order_8_e->isNotEmpty())
+    @php $rate = \App\Models\RateAmount::getFor($session_info->id, $exam_type, '8.e'); @endphp
+    <h3 style="margin-top:15px;margin-bottom: 4px">
+        (ii) List of teacher in tabulation (&#64; {{ $rate ? number_format($rate->default_rate, 0) : '90' }}/- per student)
+    </h3>
+
+    <table class="body_table_1" style="margin-top: 0px;" border="1" cellpadding="6">
+        <thead>
+        <tr>
+            <th style="width:10%;">Sl. No.</th>
+            <th style="width:65%;">Name and Address</th>
+            <th style="width:25%;">No. of Students</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach($assigns_order_8_e as $i => $assign)
+            @php
+                $person     = $assign->teacher ?? $assign->employee;
+                $students   = (int)($assign->total_students ?? 0);
+                $teachers   = (int)($assign->total_teachers ?? 1); // fallback
+            @endphp
+            <tr>
+                <td style="text-align:center;">{{ $i + 1 }}</td>
+                <td style="text-align:left;">
+                    {{ $person?->user?->name }},
+                    {{ $person?->designation?->designation }},
+                    {{ $person?->department?->fullname }},
+                    {{ $person?->university?->short_name ?? 'DUET' }}, {{ $person?->university?->city ?? 'Gazipur' }}
                 </td>
                 <td style="text-align:center;">
                     {{ $students }}/{{ $teachers }}

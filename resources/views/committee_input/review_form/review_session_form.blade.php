@@ -58,6 +58,14 @@
         {{--order-10.a--}}
         @include('committee_input.patritals.review.list_scrutinizing_theory_grade_sheet')
 
+        {{--8.d List of Teachers Prepared Computerized Result (@ **/- per student per subject)--}}
+        @include('committee_input.patritals.review.list_prepared_computerized_result')
+
+        {{--8.c List of Teachers Verified Computerized Grade Sheets & GPA List (@**/- per student)--}}
+        @include('committee_input.patritals.review.list_verified_computerized_grade_sheet')
+
+        {{--8.e Tabulation (@**/- per student)--}}
+        @include('committee_input.patritals.review.list_tabulation')
 
 
         {{--order-12.a--}}

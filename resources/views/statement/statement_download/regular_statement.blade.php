@@ -978,7 +978,8 @@
                 $firstPerson  = $first->teacher ?? $first->employee;
 
                 // total students (sum of no_of_items for this teacher)
-                $totalStudents = (int) $rows->sum(function($r){ return (float) $r->no_of_items; });
+                $totalStudents = round((float) $rows->sum(function($r){ return (float) $r->no_of_items; }), 4);
+                $displayTotalStudents = fmod($totalStudents, 1) == 0 ? (int)$totalStudents : rtrim(rtrim(number_format($totalStudents, 2, '.', ''), '0'), '.');
             @endphp
 
             {{-- First row (teacher info + first course) --}}
@@ -996,7 +997,7 @@
                 <td style="text-align:center;">
                     {{ (int)($first->total_students ?? 0) }}/{{ (int)($first->total_teachers ?? $rowspan) }}
                 </td>
-                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $totalStudents }}</td>
+                <td rowspan="{{ $rowspan }}" style="text-align:center;">{{ $displayTotalStudents }}</td>
             </tr>
 
             {{-- Remaining courses for same teacher --}}
