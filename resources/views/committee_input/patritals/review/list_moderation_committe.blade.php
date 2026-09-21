@@ -38,7 +38,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="total_week">Min rate per member</label>
-                                <input type="number" name="moderation_committee_min_rate" value="{{$mc_min_rate??1500}}"
+                                <input type="number" name="moderation_committee_min_rate" value="{{$mc_min_rate??2000}}"
                                        step="any"
                                        class="form-control" placeholder="Min rate per member" required="">
                             </div>

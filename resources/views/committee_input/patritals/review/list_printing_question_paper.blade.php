@@ -32,7 +32,7 @@
                                     type="number"
                                     name="printing_question_paper_rate"
                                     id="printing-question-paper-rate"
-                                    value="{{ $print_question_paper_rate ?? 35 }}"
+                                    value="{{ $print_question_paper_rate ?? 50 }}"
                                     step="any"
                                     class="form-control"
                                     placeholder="Enter per stencil rate"

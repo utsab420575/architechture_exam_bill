@@ -36,7 +36,7 @@
                         <div class="col-md-4 mb-4">
                             <div class="form-group">
                                 <label for="stencil_cutting_question_paper_rate">Per Stencil Rate</label>
-                                <input type="number"  name="stencil_cutting_question_paper_rate" value="{{$stencill_cutting_per_stencil_rate??115}}" step="any" class="form-control" placeholder="Enter per student per thesis/project rate" required>
+                                <input type="number"  name="stencil_cutting_question_paper_rate" value="{{$stencill_cutting_per_stencil_rate??120}}" step="any" class="form-control" placeholder="Enter per student per thesis/project rate" required>
                             </div>
                         </div>
                         <div class="col-md-4 mb-4">

@@ -69,7 +69,7 @@
         @include('committee_input.patritals.review.list_printing_question_paper')
 
 
-        {{--order-12.b--}}
+        {{--order-11--}}
         @include('committee_input.patritals.review.list_comparison_question_paper')
 
         {{--order-15--}}

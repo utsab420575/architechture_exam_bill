@@ -177,7 +177,7 @@ class StatementReviewController extends Controller
         $rateHead_order_9 = RateHead::where('order_no', '9')->first();
 
         $assigns_order_9 = RateAssign::with([
-            'teacher.user','teacher.designation','teacher.department',
+            'teacher.user','teacher.designation','teacher.department','teacher.university',
             'employee.user','employee.designation','employee.department','rateHead'
         ])
             ->where('session_id',  $session_info->id)

@@ -63,7 +63,7 @@
                                         $amount = 4500; // Default value if no data is found
                                     }
                                 @endphp--}}
-                                <input type="number" name="chairman_amount" class="form-control" step="any" min="1" value="{{$honorium_chairman??4500}}" required>
+                                <input type="number" name="chairman_amount" class="form-control" step="any" min="1" value="{{$honorium_chairman??4800}}" required>
                             </td>
                         </tr>
 
