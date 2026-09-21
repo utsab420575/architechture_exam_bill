@@ -1440,7 +1440,7 @@ class CommitteeInputReviewController extends Controller
 
             // Step 5: Assign to teachers
             foreach ($teacherData as $courseId => $teacherIds) {
-                $studentCount = (int) $studentData[$courseId];
+                $studentCount = (float) $studentData[$courseId];
                 $teacherCount = count($teacherIds);
 
                 if ($teacherCount > 0 && $studentCount >= 0) {
@@ -1507,7 +1507,7 @@ class CommitteeInputReviewController extends Controller
     public function storeVerifiedComputerizedGradeSheet(Request $request)
     {
         $teacherIds = $request->input('verified_computerized_result_teachers', []);
-        $totalStudents = (int) $request->input('verified_computerized_result_total_students');
+        $totalStudentsRaw = $request->input('verified_computerized_result_total_students');
         $sessionId = $request->sid;
         $verified_computerized_grade_sheet_rate = $request->verified_computerized_grade_sheet_rate;
         $exam_type_record = ExamType::where('type', 'review')->first();
@@ -1516,7 +1516,7 @@ class CommitteeInputReviewController extends Controller
         Log::info('📥 Received Verified Computerized Result Data (Review)', [
             'session_id' => $sessionId,
             'teacher_ids' => $teacherIds,
-            'total_students' => $totalStudents,
+            'total_students' => $totalStudentsRaw,
             'rate' => $verified_computerized_grade_sheet_rate
         ]);
 
@@ -1527,8 +1527,8 @@ class CommitteeInputReviewController extends Controller
             $errors['verified_computerized_result_teachers'] = 'Select at least one teacher.';
         }
 
-        if (!$totalStudents || $totalStudents < 1) {
-            $errors['verified_computerized_result_total_students'] = 'Enter a valid number of students.';
+        if ($totalStudentsRaw === null || $totalStudentsRaw === '' || !is_numeric($totalStudentsRaw) || (float)$totalStudentsRaw < 0) {
+            $errors['verified_computerized_result_total_students'] = 'Enter a valid number of students (0 or greater).';
         }
 
         if (!empty($errors)) {
@@ -1537,6 +1537,8 @@ class CommitteeInputReviewController extends Controller
                 'errors' => $errors
             ], 422);
         }
+
+        $totalStudents = (float) $totalStudentsRaw;
 
         try {
             DB::beginTransaction();
@@ -1632,7 +1634,7 @@ class CommitteeInputReviewController extends Controller
     public function storeTabulation(Request $request)
     {
         $teacherIds = $request->input('tabulation_teachers', []);
-        $totalStudents = (float) $request->input('tabulation_total_students', 0);
+        $totalStudentsRaw = $request->input('tabulation_total_students');
         $sessionId = $request->sid;
         $tabulation_rate = $request->tabulation_rate ?? 90;
         $exam_type_record = ExamType::where('type', 'review')->first();
@@ -1641,7 +1643,7 @@ class CommitteeInputReviewController extends Controller
         Log::info('📥 Received Tabulation Data (Review)', [
             'session_id' => $sessionId,
             'teacher_ids' => $teacherIds,
-            'total_students' => $totalStudents,
+            'total_students' => $totalStudentsRaw,
             'rate' => $tabulation_rate
         ]);
 
@@ -1652,8 +1654,8 @@ class CommitteeInputReviewController extends Controller
             $errors['tabulation_teachers'] = 'Select at least one teacher.';
         }
 
-        if ($totalStudents === null || $totalStudents === '' || !is_numeric($totalStudents) || $totalStudents < 0) {
-            $errors['tabulation_total_students'] = 'Enter a valid number of students.';
+        if ($totalStudentsRaw === null || $totalStudentsRaw === '' || !is_numeric($totalStudentsRaw) || (float)$totalStudentsRaw < 0) {
+            $errors['tabulation_total_students'] = 'Enter a valid number of students (0 or greater).';
         }
 
         if (!empty($errors)) {
@@ -1662,6 +1664,8 @@ class CommitteeInputReviewController extends Controller
                 'errors' => $errors
             ], 422);
         }
+
+        $totalStudents = (float) $totalStudentsRaw;
 
         try {
             DB::beginTransaction();

@@ -74,12 +74,12 @@
                                 // Check if there is saved data, and if yes, get total_students from the first teacher's entry
                                 $noOfItems = $savedForVerifiedComputerizedGradeSheet->isNotEmpty()
                                             ? $savedForVerifiedComputerizedGradeSheet->first()->total_students
-                                            : $totalStudentInSession;
+                                            : ($totalStudentInSession ?? 0);
                             @endphp
                             <label for="verified_computerized_result_total_students">Total Students</label>
                             <input type="number"
                                    name="verified_computerized_result_total_students"
-                                   min="1"
+                                   min="0"
                                    step="any"
                                    value="{{ old('verified_computerized_result_total_students', $noOfItems) }}"
                                    class="form-control"

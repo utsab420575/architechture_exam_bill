@@ -74,7 +74,7 @@
                                 // Check if there is saved data, and if yes, get total_students from the first teacher's entry
                                 $noOfItems = $savedForTabulation->isNotEmpty()
                                             ? $savedForTabulation->first()->total_students
-                                            : $totalStudentInSession;
+                                            : ($totalStudentInSession ?? 0);
                             @endphp
                             <label for="tabulation_total_students">Total Students</label>
                             <input type="number"
